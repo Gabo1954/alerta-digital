@@ -19,7 +19,7 @@ async function inicializarPool() {
       poolMax: 10,
       poolIncrement: 2
     });
-    console.log('✅ Conexión al Pool de Oracle Database establecida con éxito.');
+    console.log(' Conexión al Pool de Oracle Database establecida con éxito.');
   } catch (err) {
     console.error('❌ Error fatal al iniciar el pool de Oracle:', err.message);
     process.exit(1); 
