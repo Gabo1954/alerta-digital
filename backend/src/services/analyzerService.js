@@ -1,98 +1,102 @@
-// backend/src/services/analyzerService.js
+const fs = require('fs');
+const path = require('path');
 
-// 1. Función para extraer URLs de un texto
-const extraerURLs = (texto) => {
-    // Expresión regular para encontrar enlaces http o https
-    const regexURL = /(https?:\/\/[^\s]+)/g;
-    return texto.match(regexURL) || [];
-};
+// Archivo donde la IA guardará su conocimiento
+const WEIGHTS_FILE = path.join(__dirname, 'ml_weights.json');
 
-// 2. Función para evaluar el riesgo de una URL
-const analizarURL = (url) => {
-    let puntaje = 0;
-    let banderasRojas = [];
-
-    // Patrón 1: Uso de IP en lugar de un dominio oficial (ej: http://192.168.1.1/login)
-    const regexIP = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/;
-    if (regexIP.test(url)) {
-        puntaje += 40;
-        banderasRojas.push("Usa una dirección IP en lugar de un nombre de dominio.");
+class AnalyzerService {
+    constructor() {
+        this.weights = this.loadWeights();
     }
 
-    // Patrón 2: Dominios de nivel superior (TLDs) sospechosos o baratos
-    const tldSospechosos = ['.xyz', '.top', '.club', '.tk', '.biz', '.online'];
-    if (tldSospechosos.some(tld => url.includes(tld))) {
-        puntaje += 30;
-        banderasRojas.push("Usa una extensión de dominio comúnmente asociada a estafas.");
+    loadWeights() {
+        if (fs.existsSync(WEIGHTS_FILE)) {
+            try {
+                return JSON.parse(fs.readFileSync(WEIGHTS_FILE, 'utf8'));
+            } catch (e) {
+                console.error("Error leyendo ml_weights.json, cargando defaults.");
+            }
+        }
+        return {
+            spam: { 'urgente': 5, 'bloqueada': 5, 'premio': 5, 'ganador': 5, 'contraseña': 4, 'actualizar': 3, 'cuenta': 2, 'verificar': 3, 'banco': 3 },
+            safe: { 'hola': 2, 'mañana': 2, 'reunión': 2, 'gracias': 2, 'ok': 1, 'saludos': 2, 'universidad': 2, 'duoc': 3 }
+        };
     }
 
-    // Patrón 3: Typosquatting o palabras trampa en la URL
-    const palabrasTrampa = ['login', 'update', 'secure', 'verify', 'banco', 'cuenta', 'free', 'premio'];
-    if (palabrasTrampa.some(palabra => url.toLowerCase().includes(palabra))) {
-        puntaje += 20;
-        banderasRojas.push("La URL intenta imitar una página de inicio de sesión o seguridad.");
+    saveWeights() {
+        fs.writeFileSync(WEIGHTS_FILE, JSON.stringify(this.weights, null, 2), 'utf8');
     }
 
-    return { puntaje, banderasRojas };
-};
+    tokenize(text) {
+        return text.toLowerCase().replace(/[^\w\s\.\:\/]/gi, '').split(/\s+/);
+    }
 
-// 3. Función Principal que orquesta la evaluación
-const evaluarMensaje = (texto) => {
-    let puntajeTotal = 0;
-    let alertas = [];
-    let textoLimpiado = texto.toLowerCase();
+    evaluarMensaje(contenido) {
+        const words = this.tokenize(contenido);
+        let spamScore = 0;
+        let safeScore = 0;
+        let detalles = [];
 
-    // A. Analizar las URLs encontradas
-    const urlsEncontradas = extraerURLs(textoLimpiado);
-    if (urlsEncontradas.length > 0) {
-        urlsEncontradas.forEach(url => {
-            const analisisURL = analizarURL(url);
-            puntajeTotal += analisisURL.puntaje;
-            alertas = [...alertas, ...analisisURL.banderasRojas];
+        words.forEach(word => {
+            if (this.weights.spam[word]) {
+                spamScore += this.weights.spam[word];
+                detalles.push(`Palabra riesgosa detectada: "${word}"`);
+            }
+            if (this.weights.safe[word]) {
+                safeScore += this.weights.safe[word];
+            }
         });
+
+        const totalScore = spamScore + safeScore;
+        let puntajeTotal = totalScore === 0 ? 0 : Math.round((spamScore / totalScore) * 100);
+
+        if (contenido.includes('http://') || contenido.includes('https://') || contenido.includes('www.')) {
+            puntajeTotal += 20;
+            detalles.push("El mensaje contiene un enlace externo.");
+        }
+
+        puntajeTotal = Math.min(puntajeTotal, 100);
+
+        let idNivelRiesgo = 1;
+        let idResultado = 1;
+
+        if (puntajeTotal > 65) {
+            idNivelRiesgo = 3;
+            idResultado = 3;
+        } else if (puntajeTotal > 30) {
+            idNivelRiesgo = 2;
+            idResultado = 2;
+        }
+
+        return {
+            puntajeTotal,
+            idNivelRiesgo,
+            idResultado,
+            detalles: [...new Set(detalles)]
+        };
     }
 
-    // B. Análisis Semántico del Texto
-    const palabrasUrgencia = ['urgente', 'inmediato', 'bloqueada', 'suspendida', 'expira', '24 horas', 'advertencia'];
-    const palabrasFinanzas = ['banco', 'clave', 'contraseña', 'tarjeta', 'pago', 'transferencia', 'bono', 'ganador'];
+    // --- FUNCIÓN DE APRENDIZAJE CONTINUO ---
+    entrenarModelo(contenido, esFraude) {
+        const words = this.tokenize(contenido);
+        let palabrasAfectadas = 0;
+        
+        words.forEach(word => {
+            if (word.length <= 3) return; // Ignoramos palabras muy cortas
+            palabrasAfectadas++;
+            
+            if (esFraude) {
+                this.weights.spam[word] = (this.weights.spam[word] || 0) + 1.5; // Sube peso spam
+                if (this.weights.safe[word]) this.weights.safe[word] = Math.max(0, this.weights.safe[word] - 1);
+            } else {
+                this.weights.safe[word] = (this.weights.safe[word] || 0) + 1.5; // Sube peso seguro
+                if (this.weights.spam[word]) this.weights.spam[word] = Math.max(0, this.weights.spam[word] - 1);
+            }
+        });
 
-    const tieneUrgencia = palabrasUrgencia.some(p => textoLimpiado.includes(p));
-    const tieneFinanzas = palabrasFinanzas.some(p => textoLimpiado.includes(p));
-
-    if (tieneUrgencia) {
-        puntajeTotal += 20;
-        alertas.push("El mensaje genera un falso sentido de urgencia o pánico.");
+        this.saveWeights();
+        return { message: `Modelo actualizado con ${palabrasAfectadas} tokens.` };
     }
+}
 
-    if (tieneFinanzas) {
-        puntajeTotal += 25;
-        alertas.push("El mensaje solicita información financiera o promete un premio.");
-    }
-
-    // C. El patrón definitivo de Phishing (Urgencia + Dinero/Claves + Enlace)
-    if (tieneUrgencia && tieneFinanzas && urlsEncontradas.length > 0) {
-        puntajeTotal += 40; // Multiplicador de riesgo
-        alertas.push("⚠️ PATRÓN CLÁSICO DE PHISHING DETECTADO.");
-    }
-
-    // D. Clasificación Final basada en el Puntaje (0 a 100+)
-    let idNivelRiesgo = 1; // 1: Bajo
-    let idResultado = 1;   // 1: Seguro
-
-    if (puntajeTotal >= 70) {
-        idNivelRiesgo = 3; // 3: Alto
-        idResultado = 3;   // 3: Fraude
-    } else if (puntajeTotal >= 30) {
-        idNivelRiesgo = 2; // 2: Medio
-        idResultado = 2;   // 2: Sospechoso
-    }
-
-    return {
-        idNivelRiesgo,
-        idResultado,
-        puntajeTotal,
-        detalles: [...new Set(alertas)] // Eliminamos alertas duplicadas
-    };
-};
-
-module.exports = { evaluarMensaje };
+module.exports = new AnalyzerService();
