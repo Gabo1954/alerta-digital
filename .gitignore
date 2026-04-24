@@ -1,0 +1,17 @@
+# Dependencias de ambos
+node_modules/
+
+# Configuración sensible
+.env
+.env.local
+
+# Oracle Cloud (Backend)
+backend/wallet/
+backend/*.zip
+
+# Build de React (Frontend)
+frontend/dist/
+frontend/build/
+
+# Varios
+.DS_Store
