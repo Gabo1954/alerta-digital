@@ -1,17 +1,39 @@
-# Dependencias de ambos
-node_modules/
+# --- SYSTEM FILES ---
+.DS_Store
+Thumbs.db
+*.log
+*.msi
+*.exe
 
-# Configuración sensible
+# --- DEPENDENCIES ---
+# Ignora las carpetas pesadas de librerías
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# --- CONFIG & SECRETS ---
+# ¡CRÍTICO! Nunca subir credenciales ni claves
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Oracle Cloud (Backend)
+# --- ORACLE CLOUD (BACKEND) ---
+# Ignora la carpeta de la Wallet y archivos comprimidos de conexión
 backend/wallet/
 backend/*.zip
+wallet/
+*.zip
 
-# Build de React (Frontend)
+# --- FRONTEND BUILDS ---
+# Ignora las carpetas de producción de React/Vite
 frontend/dist/
 frontend/build/
+dist/
 
-# Varios
-.DS_Store
+# --- IDE FILES ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
