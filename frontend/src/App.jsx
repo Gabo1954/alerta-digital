@@ -10,10 +10,11 @@ import PagoResultado from './components/PagoResultado';
 
 function App() {
   const [usuario, setUsuario] = useState(null);
+  // 'inicio', 'historial', 'aprender', 'ayuda', 'pro'
   const [tabActiva, setTabActiva] = useState('inicio'); 
   const [isPremium, setIsPremium] = useState(false); 
   const [vistaAuth, setVistaAuth] = useState('login');
-  const GOOGLE_CLIENT_ID = "240556836925-j0alagivti7gr579ajs3d98kmbh59d4i.apps.googleusercontent.com";
+
   const path = window.location.pathname;
 
   useEffect(() => {
@@ -41,7 +42,8 @@ function App() {
   }
 
   return (
-    <div className="h-[100dvh] w-full bg-black flex justify-center selection:bg-blue-500 selection:text-white">
+    // Reemplazado h-[100dvh] por h-dvh según la sugerencia de Tailwind v4
+    <div className="h-dvh w-full bg-black flex justify-center selection:bg-blue-500 selection:text-white">
       <div className="w-full max-w-md bg-gray-950 h-full relative flex flex-col overflow-hidden shadow-2xl">
         
         {/* HEADER NATIVO */}
