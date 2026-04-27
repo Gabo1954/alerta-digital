@@ -8,7 +8,7 @@ const Suscripcion = ({ isPremium, setTabActiva }) => {
         setCargando(true);
         try {
             const { data } = await api.post('/pagos/crear-sesion');
-            
+
             // Creación de formulario dinámico para POST automático al portal de Transbank
             const form = document.createElement('form');
             form.method = 'POST';
@@ -21,7 +21,7 @@ const Suscripcion = ({ isPremium, setTabActiva }) => {
 
             form.appendChild(input);
             document.body.appendChild(form);
-            form.submit(); 
+            form.submit();
         } catch (err) {
             alert('No se pudo iniciar la conexión segura con Transbank.');
             setCargando(false);
@@ -35,7 +35,7 @@ const Suscripcion = ({ isPremium, setTabActiva }) => {
                 <div className="relative w-full max-w-sm bg-linear-to-br from-yellow-400 via-yellow-600 to-yellow-800 p-1 rounded-3xl shadow-[0_0_50px_rgba(250,204,21,0.3)] mb-8">
                     <div className="bg-gray-950 p-8 rounded-[1.35rem] h-full relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/20 blur-3xl"></div>
-                        
+
                         <div className="flex justify-between items-start mb-8">
                             <div className="w-12 h-12 bg-yellow-500/10 text-yellow-500 rounded-xl flex items-center justify-center">
                                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
@@ -63,7 +63,12 @@ const Suscripcion = ({ isPremium, setTabActiva }) => {
     return (
         <div className="p-5 flex flex-col justify-center animate-fade-in pt-8">
             <div className="text-center mb-8">
-                <h2 className="text-3xl font-black text-white leading-none">Mejora tu <br/><span className="text-yellow-500 underline decoration-4 underline-offset-4">Seguridad</span></h2>
+                <h2 className="text-3xl font-black text-white leading-tight tracking-tight mb-6">
+                    Mejora tu <br className="hidden md:block" />
+                    <span className="bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(234,179,8,0.6)]">
+                        Seguridad
+                    </span>
+                </h2>
                 <p className="text-gray-400 text-sm mt-4">Compara los planes y elige la máxima protección.</p>
             </div>
 
@@ -117,7 +122,7 @@ const Suscripcion = ({ isPremium, setTabActiva }) => {
 
             {/* BOTÓN DE PAGO Y LOGO WEBPAY INTEGRADO (Solución imagen rota) */}
             <div className="bg-gray-900/80 backdrop-blur-xl rounded-[2rem] border border-white/5 p-6 shadow-2xl relative overflow-hidden">
-                <button 
+                <button
                     onClick={iniciarPagoWebpay}
                     disabled={cargando}
                     className="w-full bg-linear-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-black py-4 rounded-2xl transition-all flex justify-center items-center gap-3 shadow-xl shadow-yellow-500/20 active:scale-95"
@@ -131,7 +136,7 @@ const Suscripcion = ({ isPremium, setTabActiva }) => {
 
                 <div className="flex flex-col items-center gap-2 mt-5">
                     <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest text-center">Pago 100% seguro procesado por</p>
-                    
+
                     {/* SVG y Texto de Webpay (No se romperá nunca) */}
                     <div className="flex items-center gap-2 opacity-60 grayscale hover:grayscale-0 transition-all">
                         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">

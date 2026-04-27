@@ -2,18 +2,30 @@ import { useState, useRef } from 'react';
 import api from '../services/api';
 
 const Analizador = ({ isPremium, setTabActiva }) => {
-    const [tipoAnalisis, setTipoAnalisis] = useState('texto'); 
+    const [tipoAnalisis, setTipoAnalisis] = useState('texto');
     const [mensaje, setMensaje] = useState('');
     const [loading, setLoading] = useState(false);
     const [resultado, setResultado] = useState(null);
     const [feedbackDado, setFeedbackDado] = useState(false);
     const [error, setError] = useState('');
-    
+
     const [imagenPreview, setImagenPreview] = useState(null);
     const [escaneando, setEscaneando] = useState(false);
     const fileInputRef = useRef(null);
 
     const MAX_CHARS = 500;
+
+    // --- NUEVA FUNCIÓN: Manejar el portapapeles ---
+    const handlePegar = async () => {
+        try {
+            const textoCopiado = await navigator.clipboard.readText();
+            // Evitamos que al pegar se pase del límite máximo de caracteres
+            setMensaje(textoCopiado.substring(0, MAX_CHARS));
+        } catch (err) {
+            console.error('No se pudo acceder al portapapeles: ', err);
+            setError('Permiso denegado para leer el portapapeles.');
+        }
+    };
 
     const analizarTextoAPI = async () => {
         if (!mensaje.trim()) return;
@@ -79,8 +91,8 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                     <div className="text-center bg-blue-900/10 border border-blue-500/20 p-5 rounded-[2rem] animate-fade-in">
                         <p className="text-blue-300 text-xs font-black mb-4 uppercase tracking-wider">¿El reporte es correcto?</p>
                         <div className="flex gap-3">
-                            <button onClick={() => manejarFeedbackAPI(true)} className="flex-1 bg-red-500/20 text-red-400 border border-red-500/30 py-4 rounded-xl font-black active:scale-95 transition-all text-sm">SÍ, ESTAFA</button>
-                            <button onClick={() => manejarFeedbackAPI(false)} className="flex-1 bg-green-500/20 text-green-400 border border-green-500/30 py-4 rounded-xl font-black active:scale-95 transition-all text-sm">NO, SEGURO</button>
+                            <button onClick={() => manejarFeedbackAPI(true)} className="flex-1 bg-red-500/20 text-red-400 border border-red-500/30 py-4 rounded-xl font-black active:scale-95 transition-all text-sm">SÍ</button>
+                            <button onClick={() => manejarFeedbackAPI(false)} className="flex-1 bg-green-500/20 text-green-400 border border-green-500/30 py-4 rounded-xl font-black active:scale-95 transition-all text-sm">NO</button>
                         </div>
                     </div>
                 )}
@@ -92,8 +104,17 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         <div className="p-6 flex flex-col min-h-full">
             <div className="flex justify-between items-end mb-6">
                 <div>
-                    <h2 className="text-3xl font-black text-white leading-none">Protección <br/><span className="text-blue-500 underline decoration-4 underline-offset-4">Heurística</span></h2>
-                </div>
+                    <h2 className="text-4xl font-black text-white leading-tight flex items-end gap-3">
+                        <div>
+                            Análisis <br />
+                            <span className="text-blue-500">Inteligente</span>
+                        </div>
+                        {/*estado activo*/}
+                        <div className="flex items-center gap-1.5 mb-2 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md">
+                            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                            <span className="text-[10px] text-blue-400 font-bold uppercase tracking-widest">Activo</span>
+                        </div>
+                    </h2>                </div>
                 <button onClick={() => setTabActiva('historial')} className="bg-gray-900 border border-white/10 text-gray-300 p-3 rounded-2xl active:scale-90 transition-all shadow-md">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </button>
@@ -106,24 +127,47 @@ const Analizador = ({ isPremium, setTabActiva }) => {
 
             {tipoAnalisis === 'texto' ? (
                 <div className="flex-1 flex flex-col animate-fade-in">
+
+                    {/* --- INICIO ZONA MODIFICADA --- */}
                     <div className="relative">
-                        <textarea 
-                            className="w-full bg-gray-900/50 border border-white/10 text-white rounded-[2rem] p-6 min-h-48 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-gray-600 text-lg leading-relaxed shadow-inner pr-12" 
-                            placeholder="Pega un correo o SMS dudoso aquí..." 
-                            value={mensaje} 
+                        <textarea
+                            className="w-full bg-gray-900/50 border border-white/10 text-white rounded-[2rem] p-6 pt-16 min-h-48 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-gray-600 text-lg leading-relaxed shadow-inner"
+                            placeholder="Pega un correo o SMS dudoso aquí..."
+                            value={mensaje}
                             maxLength={MAX_CHARS}
                             onChange={(e) => setMensaje(e.target.value)}
                         ></textarea>
-                        {mensaje && (
-                            <button onClick={() => setMensaje('')} className="absolute top-4 right-4 text-gray-500 hover:text-white bg-black/50 p-2 rounded-full">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+
+                        {/* Contenedor Flotante de Botones QoL */}
+                        <div className="absolute top-4 right-4 flex gap-2">
+                            {/* Botón Pegar Rápido */}
+                            <button
+                                onClick={handlePegar}
+                                className="flex items-center gap-2 bg-gray-800 hover:bg-blue-600 text-gray-300 hover:text-white px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border border-white/5"
+                                title="Pegar desde el portapapeles"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                                Pegar
                             </button>
-                        )}
+
+                            {/* Botón X (Borrar) condicionado a que exista texto */}
+                            {mensaje && (
+                                <button
+                                    onClick={() => setMensaje('')}
+                                    className="flex items-center justify-center bg-gray-800 hover:bg-red-600 text-gray-400 hover:text-white w-10 h-10 rounded-xl transition-all border border-white/5"
+                                    title="Borrar texto"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            )}
+                        </div>
                     </div>
+                    {/* --- FIN ZONA MODIFICADA --- */}
+
                     <div className="text-right mt-2 text-xs font-bold text-gray-600">
                         {mensaje.length}/{MAX_CHARS}
                     </div>
-                    
+
                     {error && <p className="text-red-400 text-center mt-2 text-sm font-bold bg-red-500/10 p-2 rounded-lg border border-red-500/20">{error}</p>}
 
                     <button onClick={analizarTextoAPI} disabled={loading || !mensaje.trim()} className="w-full bg-blue-600 text-white font-black py-5 rounded-2xl mt-auto mb-4 shadow-xl shadow-blue-600/20 active:scale-95 transition-all disabled:opacity-50 text-lg tracking-wide flex justify-center items-center gap-2">
@@ -135,7 +179,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                     {!isPremium ? (
                         <div className="text-center p-8 bg-linear-to-b from-gray-900 to-black rounded-[3rem] border border-yellow-500/20 w-full shadow-2xl">
                             <div className="w-20 h-20 bg-yellow-500/10 text-yellow-500 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shadow-lg shadow-yellow-500/10 rotate-3">
-                                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd"/></svg>
+                                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" /></svg>
                             </div>
                             <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter">Escáner Visual</h3>
                             <p className="text-gray-400 text-sm mb-8 leading-relaxed">Sube capturas de pantalla. Nuestra IA detectará logos falsos y suplantación bancaria.</p>
@@ -160,7 +204,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                                     )}
                                 </div>
                             )}
-                            <button onClick={analizarImagenVIP} disabled={escaneando || !imagenPreview} className={`w-full font-black py-5 rounded-2xl mt-auto active:scale-95 transition-all text-lg tracking-wide ${escaneando || !imagenPreview ? 'bg-gray-900 text-gray-700' : 'bg-linear-to-r from-yellow-500 to-yellow-600 text-black shadow-xl shadow-yellow-500/20'}`}>
+                            <button disabled={escaneando || !imagenPreview} className={`w-full font-black py-5 rounded-2xl mt-auto active:scale-95 transition-all text-lg tracking-wide ${escaneando || !imagenPreview ? 'bg-gray-900 text-gray-700' : 'bg-linear-to-r from-yellow-500 to-yellow-600 text-black shadow-xl shadow-yellow-500/20'}`}>
                                 {escaneando ? 'ESPERE...' : 'ESCANEAR IMAGEN'}
                             </button>
                         </div>

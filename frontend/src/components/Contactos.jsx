@@ -1,8 +1,9 @@
 const Contactos = () => {
     return (
         <div className="p-6 min-h-full">
-            <h2 className="text-2xl font-extrabold text-white mb-6">
-                Contactos de Emergencia
+            <h2 className="text-2xl md:text-3xl font-black text-white mb-6 border-l-4 border-blue-500 pl-4 tracking-tight leading-none">
+                Contactos de <br className="hidden md:block" />
+                <span className="text-gray-400 font-bold text-xl md:text-2xl mt-1 block">Asistencia y Denuncias</span>
             </h2>
 
             <div className="bg-red-500/10 border-l-4 border-red-500 p-4 rounded-r-xl mb-6 shadow-sm animate-fade-in-up">
@@ -33,7 +34,7 @@ const Contactos = () => {
                 <div className="bg-gray-800 rounded-2xl shadow-lg border border-gray-700 p-5 animate-fade-in-up delay-200">
                     <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-12 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center shrink-0">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                         </div>
                         <div>
                             <h3 className="font-extrabold text-white text-lg">Carabineros</h3>

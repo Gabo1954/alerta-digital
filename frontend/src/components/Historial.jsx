@@ -30,10 +30,14 @@ const Historial = () => {
     return (
         <div className="p-6 animate-fade-in flex flex-col h-full">
             <div className="mb-6">
-                <h2 className="text-3xl font-black text-white leading-none mb-4">Mi <span className="text-blue-500 underline decoration-4 underline-offset-4">Historial</span></h2>
-                <input 
-                    type="text" 
-                    placeholder="Buscar en análisis previos..." 
+                <h2 className="text-3xl font-black text-white leading-tight tracking-tight mb-6">
+                    Mi <br className="hidden md:block" />
+                    <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+                        Historial
+                    </span>
+                </h2>                <input
+                    type="text"
+                    placeholder="Buscar en análisis previos..."
                     className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-blue-500 transition-colors"
                     value={filtro}
                     onChange={(e) => setFiltro(e.target.value)}
@@ -43,7 +47,7 @@ const Historial = () => {
             <div className="flex-1 overflow-y-auto no-scrollbar pb-10">
                 {cargando ? (
                     <div className="space-y-4">
-                        {[1,2,3].map(i => (
+                        {[1, 2, 3].map(i => (
                             <div key={i} className="h-24 rounded-2xl skeleton border border-white/5"></div>
                         ))}
                     </div>

@@ -51,7 +51,8 @@ const Login = ({ onLoginSuccess, irARegistro }) => {
             <div className="bg-gray-800 p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-gray-700/50">
                 
                 <div className="text-center mb-8">
-                    <h2 className="text-4xl font-black text-white mb-2">🛡️ Alerta Digital</h2>
+                    <h2 className="text-4xl font-black text-white mb-2">🛡️</h2>
+                    <h2 className="text-4xl font-black text-white mb-2">Alerta Digital</h2>
                     <p className="text-gray-400 text-sm">Protección inteligente en un solo clic.</p>
                 </div>
                 

@@ -12,14 +12,19 @@ const Educacion = ({ isPremium, setTabActiva }) => {
 
     return (
         <div className="p-6 min-h-full">
-            <h2 className="text-3xl font-black text-white mb-2 leading-none">Academia <br/><span className="text-blue-500 underline decoration-4 underline-offset-4">Antifraude</span></h2>
+            <h2 className="text-4xl font-black text-white leading-tight tracking-tight">
+                Academia <br />
+                <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+                    Antifraude
+                </span>
+            </h2>
             <p className="text-gray-400 mb-8 text-sm font-medium mt-4">Aprende a identificar las tácticas de los estafadores.</p>
 
             <div className="flex items-center justify-between mb-4">
                 <h3 className="text-gray-500 font-bold uppercase text-xs tracking-wider">Nivel 1: Conceptos</h3>
                 <span className="text-[10px] bg-blue-500/20 text-blue-400 font-bold px-2 py-0.5 rounded-full">0/2 Completos</span>
             </div>
-            
+
             <div className="space-y-4 mb-10">
                 {basicos.map((item) => (
                     <div key={item.id} onClick={() => toggleExpandir(item.id)} className="bg-gray-800 rounded-2xl shadow-lg border border-white/5 p-5 cursor-pointer transition-all active:scale-95 animate-fade-in-up">
@@ -45,7 +50,7 @@ const Educacion = ({ isPremium, setTabActiva }) => {
                 <h3 className="text-yellow-600 font-bold uppercase text-xs tracking-wider flex items-center gap-2">Nivel 2: Avanzado</h3>
                 <span className="bg-linear-to-r from-yellow-500 to-yellow-600 text-black px-2 py-0.5 rounded-full text-[10px] font-black tracking-widest shadow-lg shadow-yellow-500/20">PRO</span>
             </div>
-            
+
             <div className="space-y-4">
                 <div onClick={() => !isPremium && setTabActiva('pro')} className={`bg-gray-900 rounded-2xl border border-white/5 p-5 flex items-center justify-between transition-all ${!isPremium ? 'opacity-50 grayscale cursor-pointer active:scale-95' : 'hover:bg-gray-800 cursor-pointer shadow-lg'}`}>
                     <div className="flex items-center gap-4">
