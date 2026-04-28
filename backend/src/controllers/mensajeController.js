@@ -1,6 +1,5 @@
 const { execute } = require('../config/db');
-const oracledb = require('oracledb');
-const analyzerService = require('../services/AnalyzerService');
+const AnalyzerService = require('../services/analyzerService');
 const axios = require('axios'); 
 
 // ==========================================
@@ -8,8 +7,7 @@ const axios = require('axios');
 // ==========================================
 exports.analizarMensaje = async (req, res) => {
     const { contenido } = req.body;
-    // Extraemos el ID de forma segura previendo diferentes formatos del token
-    const idUsuario = req.usuario?.id || req.usuario?.ID_USUARIO; 
+    const idUsuario = req.usuario?.id || req.usuario?.id_usuario; 
 
     if (!idUsuario) return res.status(401).json({ error: 'Sesión corrupta. Inicia sesión nuevamente.' });
     if (!contenido) return res.status(400).json({ error: 'Debes enviar el contenido del mensaje a analizar.' });
@@ -17,28 +15,23 @@ exports.analizarMensaje = async (req, res) => {
     try {
         const reporteAnalisis = await analyzerService.evaluarMensaje(contenido);
 
+        // Cambiamos SYSTIMESTAMP (Oracle) por NOW() (MariaDB)
         const sqlMensaje = `
             INSERT INTO mensaje (contenido, fecha_recepcion, usuario_id_usuario) 
-            VALUES (:contenido, SYSTIMESTAMP, :usuario_id)
-            RETURNING id_mensaje INTO :out_id
+            VALUES (?, NOW(), ?)
         `;
-        const bindsMensaje = {
-            contenido: contenido,
-            usuario_id: idUsuario,
-            out_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } 
-        };
-        const resultMensaje = await execute(sqlMensaje, bindsMensaje);
-        const idMensajeInsertado = resultMensaje.outBinds.out_id[0];
+        const resultMensaje = await execute(sqlMensaje, [contenido, idUsuario]);
+        const idMensajeInsertado = resultMensaje.rows.insertId;
 
         const sqlAnalisis = `
             INSERT INTO analisis (fecha_analisis, mensaje_id_mensaje, nivel_riesgo_id_nivel, resultado_analisis_id_resultado)
-            VALUES (SYSTIMESTAMP, :mensaje_id, :nivel_riesgo, :resultado_id)
+            VALUES (NOW(), ?, ?, ?)
         `;
-        await execute(sqlAnalisis, {
-            mensaje_id: idMensajeInsertado,
-            nivel_riesgo: reporteAnalisis.idNivelRiesgo,
-            resultado_id: reporteAnalisis.idResultado
-        });
+        await execute(sqlAnalisis, [
+            idMensajeInsertado,
+            reporteAnalisis.idNivelRiesgo,
+            reporteAnalisis.idResultado
+        ]);
 
         const etiquetasRiesgo = { 1: 'Bajo', 2: 'Medio', 3: 'Alto' };
         const etiquetasResultado = { 1: '✅ Mensaje Seguro', 2: '⚠️ Mensaje Sospechoso', 3: '🚨 Phishing Detectado' };
@@ -63,18 +56,16 @@ exports.analizarMensaje = async (req, res) => {
 };
 
 // ==========================================
-// 2. ANALIZAR IMAGEN VIP (CONEXIÓN A PYTHON)
+// 2. ANALIZAR IMAGEN VIP
 // ==========================================
 exports.analizarImagenVIP = async (req, res) => {
     const { imagen_base64 } = req.body;
-    const idUsuario = req.usuario?.id || req.usuario?.ID_USUARIO;
+    const idUsuario = req.usuario?.id || req.usuario?.id_usuario;
 
     if (!idUsuario) return res.status(401).json({ error: 'Sesión corrupta. Inicia sesión nuevamente.' });
     if (!imagen_base64) return res.status(400).json({ error: "No se proporcionó ninguna imagen." });
 
     try {
-        // [!] SOLUCIÓN AL ERROR 500 AL ESCANEAR IMAGEN: 
-        // Agregamos límites infinitos para que Axios soporte imágenes pesadas sin caerse.
         const pythonResponse = await axios.post('http://127.0.0.1:8000/api/ia/ocr', {
             image_base64: imagen_base64
         }, {
@@ -83,7 +74,6 @@ exports.analizarImagenVIP = async (req, res) => {
         });
 
         if (!pythonResponse.data.success) {
-            console.error("Python OCR devolvió error:", pythonResponse.data.error);
             return res.status(500).json({ error: 'El motor OCR de Python falló: ' + pythonResponse.data.error });
         }
 
@@ -105,25 +95,23 @@ exports.analizarImagenVIP = async (req, res) => {
 
         const sqlMensaje = `
             INSERT INTO mensaje (contenido, fecha_recepcion, usuario_id_usuario) 
-            VALUES (:contenido, SYSTIMESTAMP, :usuario_id)
-            RETURNING id_mensaje INTO :out_id
+            VALUES (?, NOW(), ?)
         `;
-        const resultMensaje = await execute(sqlMensaje, {
-            contenido: "(FOTO ESCANEADA): " + textoExtraido.substring(0, 3000), 
-            usuario_id: idUsuario,
-            out_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } 
-        });
-        const idMensajeInsertado = resultMensaje.outBinds.out_id[0];
+        const resultMensaje = await execute(sqlMensaje, [
+            "(FOTO ESCANEADA): " + textoExtraido.substring(0, 3000), 
+            idUsuario
+        ]);
+        const idMensajeInsertado = resultMensaje.rows.insertId;
 
         const sqlAnalisis = `
             INSERT INTO analisis (fecha_analisis, mensaje_id_mensaje, nivel_riesgo_id_nivel, resultado_analisis_id_resultado)
-            VALUES (SYSTIMESTAMP, :mensaje_id, :nivel_riesgo, :resultado_id)
+            VALUES (NOW(), ?, ?, ?)
         `;
-        await execute(sqlAnalisis, {
-            mensaje_id: idMensajeInsertado,
-            nivel_riesgo: reporteAnalisis.idNivelRiesgo,
-            resultado_id: reporteAnalisis.idResultado
-        });
+        await execute(sqlAnalisis, [
+            idMensajeInsertado,
+            reporteAnalisis.idNivelRiesgo,
+            reporteAnalisis.idResultado
+        ]);
 
         const etiquetasRiesgo = { 1: 'Bajo', 2: 'Medio', 3: 'Alto' };
         const etiquetasResultado = { 1: '✅ Mensaje Seguro', 2: '⚠️ Mensaje Sospechoso', 3: '🚨 Phishing Detectado' };
@@ -159,7 +147,6 @@ exports.feedbackMensaje = async (req, res) => {
 
     try {
         const resultadoEntrenamiento = await analyzerService.entrenarModelo(contenido, esFraude);
-        console.log(`IA Actualizada en Oracle: Usuario reportó texto como ${esFraude ? 'FRAUDE' : 'SEGURO'}`);
         res.status(200).json({ 
             mensaje: 'Feedback procesado exitosamente.',
             estado: resultadoEntrenamiento.message
@@ -175,41 +162,34 @@ exports.feedbackMensaje = async (req, res) => {
 // ==========================================
 exports.obtenerHistorial = async (req, res) => {
     try {
-        const idUsuario = req.usuario?.id || req.usuario?.ID_USUARIO; 
+        const idUsuario = req.usuario?.id || req.usuario?.id_usuario; 
 
         if (!idUsuario) {
             return res.status(401).json({ error: "Sesión corrupta o token expirado. Por favor, cierra sesión y vuelve a ingresar." });
         }
 
-        // [!] SOLUCIÓN AL ERROR 500 EN EL HISTORIAL: 
-        // Se agregó DBMS_LOB.SUBSTR(m.contenido, 4000, 1) para obligar a Oracle a parsear el CLOB a Texto y evitar errores circulares en Node.
+        // MySQL/MariaDB maneja TEXT nativamente, ya no necesitamos DBMS_LOB
+        // DATE_FORMAT se usa en MariaDB en vez de TO_CHAR
         const sql = `
             SELECT 
                 m.id_mensaje AS id,
-                TO_CHAR(a.fecha_analisis, 'DD/MM/YYYY HH24:MI') AS fecha,
-                DBMS_LOB.SUBSTR(m.contenido, 4000, 1) AS texto, 
+                DATE_FORMAT(a.fecha_analisis, '%d/%m/%Y %H:%i') AS fecha,
+                m.contenido AS texto, 
                 nr.nombre AS riesgo
             FROM mensaje m
             JOIN analisis a ON m.id_mensaje = a.mensaje_id_mensaje
             JOIN nivel_riesgo nr ON a.nivel_riesgo_id_nivel = nr.id_nivel
-            WHERE m.usuario_id_usuario = :id_usuario
+            WHERE m.usuario_id_usuario = ?
             ORDER BY a.fecha_analisis DESC
         `;
 
-        const result = await execute(sql, { id_usuario: idUsuario });
+        const result = await execute(sql, [idUsuario]);
 
-        // Oracle retorna columnas en MAYÚSCULAS
-        const historialFormat = result.rows.map(row => ({
-            id: row.ID || row.id,
-            fecha: row.FECHA || row.fecha,
-            texto: row.TEXTO || row.texto,
-            riesgo: row.RIESGO || row.riesgo
-        }));
-
-        res.status(200).json({ historial: historialFormat });
+        // Ya no necesitamos lidiar con las mayúsculas de Oracle
+        res.status(200).json({ historial: result.rows });
 
     } catch (error) {
-        console.error("Error crítico obteniendo historial desde Oracle:", error);
+        console.error("Error crítico obteniendo historial desde MariaDB:", error);
         res.status(500).json({ error: "Fallo interno en la base de datos al cargar el historial." });
     }
 };

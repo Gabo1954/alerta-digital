@@ -1,49 +1,48 @@
-const oracledb = require('oracledb');
+const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-// Formatear las respuestas de Oracle como Objetos JSON
-oracledb.outFormat = oracledb.OUT_FORMAT_OBJECT;
-// Auto-commit para que los INSERT y UPDATE se guarden de inmediato
-oracledb.autoCommit = true; 
+let pool;
 
 async function inicializarPool() {
   try {
-    await oracledb.createPool({
+    pool = mysql.createPool({
+      host: process.env.DB_HOST,
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
-      connectString: process.env.DB_CONNECTION_STRING,
-      walletLocation: process.env.TNS_ADMIN,
-      // 👇 ESTA LÍNEA ABRE EL CANDADO DE LA WALLET 👇
-      walletPassword: process.env.WALLET_PASSWORD, 
-      poolMin: 2,
-      poolMax: 10,
-      poolIncrement: 2
+      database: process.env.DB_NAME,
+      port: process.env.DB_PORT || 3306,
+
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+
+      // 🔥 CLAVE PARA AWS (esto soluciona tu error)
+      ssl: {
+        rejectUnauthorized: false
+      }
     });
-    console.log('✅ Conexión al Pool de Oracle Database establecida con éxito.');
+
+    // Probar la conexión
+    const connection = await pool.getConnection();
+    console.log('✅ Conexión al Pool de AWS MariaDB establecida con éxito.');
+    connection.release();
+
   } catch (err) {
-    console.error('❌ Error fatal al iniciar el pool de Oracle:', err.message);
-    process.exit(1); 
+    console.error('❌ Error fatal al iniciar el pool de AWS MariaDB:', err.message);
+    process.exit(1);
   }
 }
 
-// Función de ayuda para hacer consultas fácilmente
-async function execute(sql, binds = [], opts = {}) {
-  let connection;
+// Función helper
+async function execute(sql, params = []) {
+  if (!pool) throw new Error("La base de datos AWS no está conectada");
+
   try {
-    connection = await oracledb.getConnection();
-    const result = await connection.execute(sql, binds, opts);
-    return result;
+    const [rows] = await pool.execute(sql, params);
+    return { rows };
   } catch (err) {
-    console.error('Error ejecutando la consulta:', err);
+    console.error('❌ Error ejecutando la consulta SQL:', err.message);
     throw err;
-  } finally {
-    if (connection) {
-      try {
-        await connection.close(); // Siempre liberar la conexión de vuelta al pool
-      } catch (err) {
-        console.error('Error cerrando la conexión:', err);
-      }
-    }
   }
 }
 
