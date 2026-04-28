@@ -2,7 +2,7 @@ const { execute } = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
-const oracledb = require('oracledb'); // Requerido para capturar el ID en el registro de Google
+const oracledb = require('oracledb'); // Requerido para capturar el ID
 
 // ==========================================
 // 1. REGISTRAR USUARIO (TRADICIONAL)
@@ -19,12 +19,13 @@ exports.registrarUsuario = async (req, res) => {
         const passwordHashed = await bcrypt.hash(password, salt);
         const idTipoUsuario = 1; // 1 = Usuario Normal
 
+        // LA SOLUCIÓN: Agregamos RETURNING id_usuario INTO :out_id
         const sql = `
             INSERT INTO usuario (
                 nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, password, es_vip, tipo_usuario_id_tipo_usuario
             ) VALUES (
                 :nombre, :ap_paterno, :ap_materno, TO_DATE(:fecha_nacimiento, 'YYYY-MM-DD'), :correo, :celular, :password, 0, :tipo_usuario
-            )
+            ) RETURNING id_usuario INTO :out_id
         `;
 
         const binds = {
@@ -35,25 +36,29 @@ exports.registrarUsuario = async (req, res) => {
             correo: correo,
             celular: celular || null,
             password: passwordHashed,
-            tipo_usuario: idTipoUsuario
+            tipo_usuario: idTipoUsuario,
+            out_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } // Capturamos el ID
         };
 
-        await execute(sql, binds);
+        const result = await execute(sql, binds);
+        const nuevoIdUsuario = result.outBinds.out_id[0]; // Extraemos el ID recién creado
 
         res.status(201).json({ 
             mensaje: '¡Usuario registrado exitosamente en Oracle Cloud!',
             usuario: { 
+                id: nuevoIdUsuario,
                 nombre, 
                 correo,
-                es_vip: false // Por defecto es 0 en BD
+                es_vip: false 
             },
-            token: jwt.sign({ correo, rol: idTipoUsuario }, process.env.JWT_SECRET || 'super_secreto_alerta_digital_duoc', { expiresIn: '8h' })
+            // AHORA EL TOKEN SÍ TIENE EL ID ADENTRO
+            token: jwt.sign({ id: nuevoIdUsuario, correo, rol: idTipoUsuario }, process.env.JWT_SECRET || 'super_secreto_alerta_digital_duoc', { expiresIn: '8h' })
         });
 
     } catch (error) {
         console.error('Error en registro:', error);
         if (error.message && error.message.includes('ORA-00001')) {
-            return res.status(409).json({ error: 'El correo o número de celular ya están registrados en el sistema.' });
+            return res.status(409).json({ error: 'El correo o celular ya están registrados en el sistema.' });
         }
         res.status(500).json({ error: 'Error interno del servidor al registrar.' });
     }
@@ -83,13 +88,11 @@ exports.loginUsuario = async (req, res) => {
 
         const usuario = result.rows[0];
 
-        // Comparar la contraseña ingresada con el Hash de Oracle
         const passwordValido = await bcrypt.compare(password, usuario.PASSWORD);
         if (!passwordValido) {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
-        // Generar el Token JWT
         const payload = {
             id: usuario.ID_USUARIO,
             nombre: usuario.NOMBRE,
@@ -105,7 +108,7 @@ exports.loginUsuario = async (req, res) => {
                 id: usuario.ID_USUARIO,
                 nombre: usuario.NOMBRE,
                 correo: usuario.CORREO,
-                es_vip: usuario.ES_VIP === 1 // Transforma el 1 de Oracle a true en React
+                es_vip: usuario.ES_VIP === 1 
             }
         });
 
@@ -118,7 +121,6 @@ exports.loginUsuario = async (req, res) => {
 // ==========================================
 // 3. LOGIN CON GOOGLE OAUTH
 // ==========================================
-// TU CLIENT_ID REAL DE GOOGLE
 const CLIENT_ID = "240556836925-j0alagivti7gr579ajs3d98kmbh59d4i.apps.googleusercontent.com";
 const googleClient = new OAuth2Client(CLIENT_ID);
 
@@ -135,14 +137,12 @@ exports.googleLogin = async (req, res) => {
         
         const { email, name } = ticket.getPayload();
 
-        // Buscar si el usuario ya existe
         const sqlBuscar = `SELECT id_usuario, nombre, correo, es_vip, tipo_usuario_id_tipo_usuario FROM usuario WHERE correo = :email`;
         const resultBuscar = await execute(sqlBuscar, { email });
 
         let usuario;
 
         if (resultBuscar.rows.length === 0) {
-            // Usuario nuevo desde Google (Lo registramos automáticamente)
             const sqlInsert = `
                 INSERT INTO usuario (nombre, correo, password, es_vip, tipo_usuario_id_tipo_usuario) 
                 VALUES (:nombre, :correo, 'AUTH_GOOGLE_PROTECTED', 0, 1)
@@ -152,7 +152,7 @@ exports.googleLogin = async (req, res) => {
             const resultInsert = await execute(sqlInsert, {
                 nombre: name,
                 correo: email,
-                out_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } // Capturamos el ID autogenerado
+                out_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } 
             });
             
             usuario = {
@@ -163,7 +163,6 @@ exports.googleLogin = async (req, res) => {
                 rol: 1
             };
         } else {
-            // Usuario existente logueándose con Google
             const row = resultBuscar.rows[0];
             usuario = {
                 id: row[0],
