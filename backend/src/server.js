@@ -5,8 +5,9 @@ const { inicializarPool } = require('./config/db');
 
 const app = express();
 
+// 1. CORS MODIFICADO: Permite que tu App Móvil (APK) se conecte sin ser bloqueada
 app.use(cors({
-    origin: 'http://localhost:5173', 
+    origin: '*', // Acepta conexiones desde cualquier dispositivo
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -26,14 +27,16 @@ app.use('/api/mensajes', mensajeRoutes);
 app.use('/api/pagos', pagoRoutes); 
 
 app.get('/', (req, res) => {
-    res.json({ estado: 'Online', proyecto: 'Alerta Digital Node.js' });
+    res.json({ estado: 'Online', proyecto: 'Alerta Digital API', nube: 'Render + Oracle' });
 });
 
+// 2. PUERTO MODIFICADO: Render inyectará su propio puerto aquí
 const PORT = process.env.PORT || 5000;
 
 inicializarPool().then(() => {
-    app.listen(PORT, () => {
-        console.log(`🚀 Servidor Express corriendo en http://localhost:${PORT}`);
+    // 3. HOST MODIFICADO: 0.0.0.0 le dice a Node que exponga la app a Internet, no solo localmente
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🚀 Servidor Express conectado a la base de datos y corriendo en el puerto ${PORT}`);
     });
 }).catch((error) => {
     console.error("❌ Error al inicializar el pool de base de datos:", error);
