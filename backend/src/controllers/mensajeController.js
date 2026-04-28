@@ -84,4 +84,5 @@ exports.feedbackMensaje = async (req, res) => {
         console.error('Error interno al entrenar el modelo ML:', error);
         res.status(500).json({ error: 'Error interno en el motor de aprendizaje.' });
     }
+    console.log('HOLA MUNDO');
 };
