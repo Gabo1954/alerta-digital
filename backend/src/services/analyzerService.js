@@ -1,71 +1,71 @@
-const fs = require('fs');
-const path = require('path');
+const { execute } = require('../config/db');
 
-// Archivo donde la IA guardará su conocimiento
-const WEIGHTS_FILE = path.join(__dirname, 'ml_weights.json');
+// Filtro de palabras sin valor semántico
+const STOP_WORDS = new Set(['para', 'como', 'este', 'esta', 'estos', 'estas', 'pero', 'todo', 'toda', 'hace', 'solo', 'tienes', 'tiene', 'desde', 'sobre']);
+const MAX_WEIGHT = 50.0;
 
 class AnalyzerService {
-    constructor() {
-        this.weights = this.loadWeights();
-    }
-
-    loadWeights() {
-        if (fs.existsSync(WEIGHTS_FILE)) {
-            try {
-                return JSON.parse(fs.readFileSync(WEIGHTS_FILE, 'utf8'));
-            } catch (e) {
-                console.error("Error leyendo ml_weights.json, cargando defaults.");
-            }
-        }
-        return {
-            spam: { 'urgente': 5, 'bloqueada': 5, 'premio': 5, 'ganador': 5, 'contraseña': 4, 'actualizar': 3, 'cuenta': 2, 'verificar': 3, 'banco': 3 },
-            safe: { 'hola': 2, 'mañana': 2, 'reunión': 2, 'gracias': 2, 'ok': 1, 'saludos': 2, 'universidad': 2, 'duoc': 3 }
-        };
-    }
-
-    saveWeights() {
-        fs.writeFileSync(WEIGHTS_FILE, JSON.stringify(this.weights, null, 2), 'utf8');
-    }
-
+    
     tokenize(text) {
-        return text.toLowerCase().replace(/[^\w\s\.\:\/]/gi, '').split(/\s+/);
+        return text.toLowerCase()
+            .replace(/[^\w\s]/gi, '') 
+            .split(/\s+/)
+            .filter(word => word.length > 3 && !STOP_WORDS.has(word));
     }
 
-    evaluarMensaje(contenido) {
+    // 1. CARGA EL CEREBRO DIRECTO DESDE ORACLE
+    async getDictionary() {
+        const sql = `SELECT palabra, peso_spam, peso_safe FROM ia_diccionario`;
+        const result = await execute(sql, {});
+        
+        const weights = { spam: {}, safe: {} };
+        // Oracle devuelve los nombres de columnas en MAYÚSCULAS
+        result.rows.forEach(row => {
+            weights.spam[row.PALABRA] = row.PESO_SPAM;
+            weights.safe[row.PALABRA] = row.PESO_SAFE;
+        });
+        return weights;
+    }
+
+    // 2. EVALUACIÓN HEURÍSTICA EN TIEMPO REAL
+    async evaluarMensaje(contenido) {
+        const weights = await this.getDictionary();
         const words = this.tokenize(contenido);
         let spamScore = 0;
         let safeScore = 0;
         let detalles = [];
 
         words.forEach(word => {
-            if (this.weights.spam[word]) {
-                spamScore += this.weights.spam[word];
-                detalles.push(`Palabra riesgosa detectada: "${word}"`);
+            if (weights.spam[word]) {
+                spamScore += weights.spam[word];
+                detalles.push(`Patrón de riesgo detectado: "${word}"`);
             }
-            if (this.weights.safe[word]) {
-                safeScore += this.weights.safe[word];
+            if (weights.safe[word]) {
+                safeScore += weights.safe[word];
             }
         });
 
         const totalScore = spamScore + safeScore;
         let puntajeTotal = totalScore === 0 ? 0 : Math.round((spamScore / totalScore) * 100);
 
-        if (contenido.includes('http://') || contenido.includes('https://') || contenido.includes('www.')) {
-            puntajeTotal += 20;
-            detalles.push("El mensaje contiene un enlace externo.");
+        // Penalización por URLs o IPs
+        const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b)/gi;
+        if (urlRegex.test(contenido)) {
+            puntajeTotal += 25; 
+            detalles.push("Contiene enlaces externos o IPs ocultas.");
         }
 
         puntajeTotal = Math.min(puntajeTotal, 100);
 
-        let idNivelRiesgo = 1;
-        let idResultado = 1;
+        let idNivelRiesgo = 1; // Bajo
+        let idResultado = 1; // Seguro
 
         if (puntajeTotal > 65) {
-            idNivelRiesgo = 3;
-            idResultado = 3;
-        } else if (puntajeTotal > 30) {
-            idNivelRiesgo = 2;
-            idResultado = 2;
+            idNivelRiesgo = 3; // Alto
+            idResultado = 3;   // Fraude
+        } else if (puntajeTotal > 35) {
+            idNivelRiesgo = 2; // Medio
+            idResultado = 2;   // Sospechoso
         }
 
         return {
@@ -76,26 +76,45 @@ class AnalyzerService {
         };
     }
 
-    // --- FUNCIÓN DE APRENDIZAJE CONTINUO ---
-    entrenarModelo(contenido, esFraude) {
+    // 3. APRENDIZAJE ACTIVO (ONLINE LEARNING) DIRECTO A ORACLE
+    async entrenarModelo(contenido, esFraude) {
         const words = this.tokenize(contenido);
+        const weights = await this.getDictionary();
         let palabrasAfectadas = 0;
-        
-        words.forEach(word => {
-            if (word.length <= 3) return; // Ignoramos palabras muy cortas
+
+        for (const word of words) {
             palabrasAfectadas++;
             
-            if (esFraude) {
-                this.weights.spam[word] = (this.weights.spam[word] || 0) + 1.5; // Sube peso spam
-                if (this.weights.safe[word]) this.weights.safe[word] = Math.max(0, this.weights.safe[word] - 1);
-            } else {
-                this.weights.safe[word] = (this.weights.safe[word] || 0) + 1.5; // Sube peso seguro
-                if (this.weights.spam[word]) this.weights.spam[word] = Math.max(0, this.weights.spam[word] - 1);
-            }
-        });
+            let nuevoSpam = weights.spam[word] || 0;
+            let nuevoSafe = weights.safe[word] || 0;
 
-        this.saveWeights();
-        return { message: `Modelo actualizado con ${palabrasAfectadas} tokens.` };
+            if (esFraude) {
+                nuevoSpam = Math.min(nuevoSpam + 1.5, MAX_WEIGHT);
+                nuevoSafe = Math.max(0, nuevoSafe - 1.0);
+            } else {
+                nuevoSafe = Math.min(nuevoSafe + 1.5, MAX_WEIGHT);
+                nuevoSpam = Math.max(0, nuevoSpam - 1.0);
+            }
+
+            // MERGE: El estándar SQL para Inteligencia Artificial que se actualiza
+            const sqlMerge = `
+                MERGE INTO ia_diccionario d
+                USING (SELECT :palabra AS pal FROM dual) src
+                ON (d.palabra = src.pal)
+                WHEN MATCHED THEN
+                    UPDATE SET d.peso_spam = :spam, d.peso_safe = :safe
+                WHEN NOT MATCHED THEN
+                    INSERT (palabra, peso_spam, peso_safe) VALUES (:palabra, :spam, :safe)
+            `;
+
+            await execute(sqlMerge, { 
+                palabra: word, 
+                spam: nuevoSpam, 
+                safe: nuevoSafe 
+            });
+        }
+
+        return { message: `Modelo reentrenado en Oracle. ${palabrasAfectadas} tokens ajustados.` };
     }
 }
 
