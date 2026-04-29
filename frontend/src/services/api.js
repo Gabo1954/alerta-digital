@@ -1,17 +1,20 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: 'http://localhost:5000/api', // Desarrollo
+   
 });
 
-// Interceptor para enviar el token automáticamente si existe
+// Interceptor para inyectar el token automáticamente
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
+        // Aseguramos el formato estándar "Bearer token"
         config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
+}, (error) => {
+    return Promise.reject(error);
 });
 
-// ESTA ES LA LÍNEA QUE FALTABA O FALLÓ: Exportamos por defecto
 export default api;
