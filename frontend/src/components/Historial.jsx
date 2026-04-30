@@ -6,7 +6,7 @@ const Historial = ({ setTabActiva }) => {
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState('');
     const [filtro, setFiltro] = useState('');
-    
+
     // ESTADO: Para el mensaje seleccionado
     const [mensajeDetalle, setMensajeDetalle] = useState(null);
 
@@ -31,7 +31,7 @@ const Historial = ({ setTabActiva }) => {
     const generarRazonesContextuales = (texto, esPeligroso) => {
         const txt = (texto || '').toLowerCase();
         let razones = [];
-        
+
         if (esPeligroso) {
             if (txt.includes('http') || txt.includes('www')) razones.push("Alerta: Contiene un enlace web que dirige fuera de la plataforma.");
             if (txt.includes('urgente') || txt.includes('bloqueada') || txt.includes('inmediato')) razones.push("Patrón detectado: Lenguaje de manipulación y urgencia extrema.");
@@ -72,12 +72,12 @@ const Historial = ({ setTabActiva }) => {
 
                 <div className="bg-gray-900/60 backdrop-blur-md rounded-[2.5rem] p-6 border border-white/10 shadow-xl relative overflow-hidden">
                     <div className={`absolute top-0 left-0 w-full h-1 ${esPeligroso ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                    
+
                     <p className="text-gray-500 text-[10px] font-black uppercase tracking-widest mb-3">Texto Original Analizado:</p>
                     <div className="bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner mb-8">
                         <p className="text-gray-300 text-sm font-medium italic leading-relaxed">"{mensajeDetalle.texto}"</p>
                     </div>
-                    
+
                     <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-4 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Reporte Heurístico del Sistema:
@@ -102,31 +102,34 @@ const Historial = ({ setTabActiva }) => {
 
     return (
         <div className="flex-1 w-full h-full flex flex-col bg-gray-950 font-sans animate-fade-in relative overflow-hidden">
-            
+
             {/* HEADER STICKY (Fijo en la parte superior) */}
             <div className="shrink-0 px-4 sm:px-6 pt-10 pb-4 bg-gray-950/90 backdrop-blur-xl border-b border-white/5 z-20 shadow-md">
                 <button onClick={volverAlInicio} className="text-gray-500 hover:text-white transition-colors mb-6 flex items-center text-sm font-bold active:scale-95">
                     <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg> Volver al Escáner
                 </button>
 
-                <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 leading-tight mb-5 tracking-tighter uppercase">
-                    Mi <br/><span className="text-blue-500 bg-none underline decoration-4 decoration-blue-500 underline-offset-4">Historial</span>
+                <h2 className="text-3xl font-black text-white leading-tight tracking-tight mb-6 flex items-center gap-3">
+                    <span>👁️‍🗨️</span>
+                    <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+                        Historial
+                    </span>
                 </h2>
-                
+
                 {/* BUSCADOR */}
                 <div className="relative group">
                     <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none transition-colors group-focus-within:text-blue-500 text-gray-500">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                     </div>
-                    <input 
-                        type="text" 
-                        placeholder="Buscar palabras o enlaces previos..." 
+                    <input
+                        type="text"
+                        placeholder="Buscar palabras o enlaces previos..."
                         className="w-full bg-gray-900 border border-white/5 rounded-2xl pl-12 pr-12 py-4 text-white text-sm outline-none focus:border-blue-500 transition-all shadow-inner placeholder:text-gray-600 font-medium"
                         value={filtro}
                         onChange={(e) => setFiltro(e.target.value)}
                     />
                     {filtro && (
-                        <button 
+                        <button
                             onClick={() => setFiltro('')}
                             className="absolute inset-y-0 right-4 flex items-center text-gray-500 hover:text-red-400 transition-colors"
                         >
@@ -156,8 +159,8 @@ const Historial = ({ setTabActiva }) => {
                         {datosFiltrados.map((item, index) => {
                             const esPeligroso = item.riesgo === 'Alto' || item.riesgo === 'Medio';
                             return (
-                                <div 
-                                    key={item.id} 
+                                <div
+                                    key={item.id}
                                     onClick={() => setMensajeDetalle(item)}
                                     className="bg-gray-900/80 hover:bg-gray-800 cursor-pointer rounded-3xl p-5 border border-white/5 shadow-sm transition-all active:scale-[0.98] group"
                                     style={{ animationDelay: `${index * 50}ms` }} // Efecto cascada
@@ -181,7 +184,7 @@ const Historial = ({ setTabActiva }) => {
                     </div>
                 )}
             </div>
-            
+
         </div>
     );
 };

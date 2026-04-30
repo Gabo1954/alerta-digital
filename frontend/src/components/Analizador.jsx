@@ -2,13 +2,13 @@ import { useState, useRef } from 'react';
 import api from '../services/api';
 
 const Analizador = ({ isPremium, setTabActiva }) => {
-    const [tipoAnalisis, setTipoAnalisis] = useState('texto'); 
+    const [tipoAnalisis, setTipoAnalisis] = useState('texto');
     const [mensaje, setMensaje] = useState('');
     const [loading, setLoading] = useState(false);
     const [resultado, setResultado] = useState(null);
-    const [estadoFeedback, setEstadoFeedback] = useState('pendiente'); 
+    const [estadoFeedback, setEstadoFeedback] = useState('pendiente');
     const [error, setError] = useState('');
-    
+
     const [imagenPreview, setImagenPreview] = useState(null);
     const [escaneando, setEscaneando] = useState(false);
     const fileInputRef = useRef(null);
@@ -19,14 +19,14 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     const importarDesdePortapapeles = async () => {
         try {
             const text = await navigator.clipboard.readText();
-            if (text) { 
-                setMensaje(text); 
-                setError(''); 
-            } else { 
-                setError('El portapapeles está vacío.'); 
+            if (text) {
+                setMensaje(text);
+                setError('');
+            } else {
+                setError('El portapapeles está vacío.');
             }
-        } catch (err) { 
-            setError('Permiso denegado para el portapapeles.'); 
+        } catch (err) {
+            setError('Permiso denegado para el portapapeles.');
         }
     };
 
@@ -38,7 +38,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
             setTimeout(() => {
                 setResultado(respuesta.data.reporte);
                 setLoading(false);
-            }, 1200); 
+            }, 1200);
         } catch (err) {
             setError('Error de comunicación con el motor de IA.');
             setLoading(false);
@@ -51,12 +51,12 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         try {
             const respuesta = await api.post('/mensajes/analizar-imagen', { imagen_base64: imagenPreview });
             setTimeout(() => {
-                setResultado({ 
-                    ...respuesta.data.reporte, 
-                    texto_leido: respuesta.data.texto_leido_oculto || '' 
+                setResultado({
+                    ...respuesta.data.reporte,
+                    texto_leido: respuesta.data.texto_leido_oculto || ''
                 });
                 setEscaneando(false);
-            }, 2500); 
+            }, 2500);
         } catch (err) {
             setError('Fallo en el servicio de IA Visual.');
             setEscaneando(false);
@@ -69,8 +69,8 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         try {
             await api.post('/mensajes/feedback', { contenido: contenidoFinal, esFraude: esFraude });
             setTimeout(() => setEstadoFeedback('completado'), 2500);
-        } catch (error) { 
-            setTimeout(() => setEstadoFeedback('completado'), 1500); 
+        } catch (error) {
+            setTimeout(() => setEstadoFeedback('completado'), 1500);
         }
     };
 
@@ -86,7 +86,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     // --- MOTOR DE INDICACIONES Y EXPLICACIÓN NARRATIVA ---
     const obtenerIndicacionNarrativa = (esPeligroso) => {
         const texto = (mensaje || resultado?.texto_leido || '').toLowerCase();
-        
+
         if (texto.includes('banco') || texto.includes('cuenta') || texto.includes('tarjeta')) {
             return "Vigilancia Financiera: Los bancos legítimos NUNCA solicitan validar datos mediante enlaces SMS. Esta es una táctica clásica de robo de credenciales.";
         }
@@ -97,15 +97,15 @@ const Analizador = ({ isPremium, setTabActiva }) => {
             return "Ingeniería Social: El mensaje usa la gratificación inmediata como anzuelo. Es altamente probable que soliciten un pago por 'gestión' que nunca existió.";
         }
 
-        return esPeligroso 
+        return esPeligroso
             ? "Veredicto: El contenido usa lenguaje manipulativo y de urgencia para forzar una acción rápida. No respondas y bloquea al remitente."
             : "Seguridad: No se detectaron patrones de estafa activos. Mantén tu precaución habitual al tratar con remitentes externos.";
     };
 
     const generarRazonesEvidencia = (esPeligroso) => {
         if (resultado?.motivos && resultado.motivos.length > 0) return resultado.motivos.slice(0, 4);
-        return esPeligroso 
-            ? ["Patrones de urgencia y alerta detectados.", "El contenido solicita validación de datos sensibles."] 
+        return esPeligroso
+            ? ["Patrones de urgencia y alerta detectados.", "El contenido solicita validación de datos sensibles."]
             : ["Estructura gramatical coherente.", "Ausencia de enlaces o redirecciones sospechosas."];
     };
 
@@ -118,7 +118,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
 
         return (
             <div className="flex-1 w-full overflow-y-auto no-scrollbar px-5 pt-6 pb-32 animate-fade-in-up font-sans">
-                
+
                 <button onClick={() => { setResultado(null); setImagenPreview(null); setMensaje(''); setEstadoFeedback('pendiente'); }} className="flex items-center text-gray-400 font-bold mb-8 hover:text-white transition-all bg-gray-800/50 px-5 py-2.5 rounded-xl border border-white/5 active:scale-95 shadow-lg">
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> NUEVO ANÁLISIS
                 </button>
@@ -138,7 +138,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
 
                 <div className="bg-gray-900/60 backdrop-blur-md rounded-[2.5rem] p-6 border border-white/10 mb-8 shadow-xl relative overflow-hidden">
                     <div className={`absolute top-0 left-0 w-full h-1 ${esPeligroso ? 'bg-red-500' : 'bg-green-500'}`}></div>
-                    
+
                     <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-4 italic">Evidencia Detectada:</p>
                     <div className="space-y-3 mb-8 bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
                         {razonesEvidencia.map((m, i) => (
@@ -170,7 +170,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                         </div>
                     </div>
                 )}
-                
+
                 {estadoFeedback === 'entrenando' && (
                     <div className="bg-gray-800 border border-gray-700 p-8 rounded-[2rem] flex flex-col items-center justify-center animate-pulse shadow-2xl relative overflow-hidden">
                         <div className="absolute inset-0 bg-blue-500/5"></div>
@@ -198,15 +198,15 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     // ==========================================
     return (
         <div className="flex-1 w-full flex flex-col px-5 pt-10 pb-24 font-sans animate-fade-in relative overflow-y-auto no-scrollbar">
-            
+
             <div className="flex items-center gap-1.5 mb-3 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md w-fit ml-2 shadow-sm">
                 <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_blue]"></span>
-                <span className="text-[10px] text-blue-400 font-black uppercase tracking-widest">IA Bayesiana Activa</span>
+                <span className="text-[10px] text-blue-400 font-black uppercase tracking-widest">IA Activa</span>
             </div>
 
             <div className="mb-6 flex justify-between items-end px-2">
                 <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 leading-tight tracking-tight uppercase">
-                    Escáner <br/><span className="text-blue-500 bg-none italic underline decoration-4 decoration-blue-500 underline-offset-4 font-normal">Digital</span>
+                    Escáner <br /><span className="text-blue-500 bg-none italic underline decoration-4 decoration-blue-500 underline-offset-4 font-normal">Digital</span>
                 </h2>
                 <button onClick={() => setTabActiva('historial')} className="bg-gray-800 border border-gray-700 text-gray-300 p-3.5 rounded-2xl hover:bg-gray-700 transition-all shadow-lg active:scale-95">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -220,7 +220,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
 
             {tipoAnalisis === 'texto' ? (
                 <div className="flex-1 flex flex-col min-h-0 animate-fade-in relative px-1">
-                    
+
                     {/* SHORTCUTS DE APLICACIONES OFICIALES */}
                     <div className="flex gap-2 mb-4">
                         <button onClick={() => window.open('whatsapp://')} className="flex-1 bg-green-600/10 border border-green-500/20 text-green-500 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
@@ -235,10 +235,10 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                     </div>
 
                     <div className="relative flex-1 flex flex-col group min-h-[220px]">
-                        <textarea 
-                            className="flex-1 w-full bg-gray-900 border border-gray-800 text-white rounded-3xl p-6 pt-16 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder:text-gray-600 text-lg leading-relaxed shadow-inner resize-none" 
-                            placeholder="Copia el mensaje sospechoso y pégalo aquí..." 
-                            value={mensaje} 
+                        <textarea
+                            className="flex-1 w-full bg-gray-900 border border-gray-800 text-white rounded-3xl p-6 pt-16 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder:text-gray-600 text-lg leading-relaxed shadow-inner resize-none"
+                            placeholder="Copia el mensaje sospechoso y pégalo aquí..."
+                            value={mensaje}
                             maxLength={MAX_CHARS}
                             onChange={(e) => setMensaje(e.target.value)}
                         ></textarea>
@@ -249,7 +249,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                             {mensaje && <button onClick={() => setMensaje('')} className="bg-gray-800/90 hover:bg-red-600 text-gray-400 w-11 h-11 rounded-xl transition-all border border-white/5 active:scale-90 shadow-xl flex items-center justify-center text-sm" title="Vaciar">✕</button>}
                         </div>
                     </div>
-                    
+
                     <div className="text-right mt-3 mb-5 text-[10px] font-black text-gray-600 uppercase tracking-widest flex justify-between px-2">
                         <span>Análisis de cadena profunda</span>
                         <span>{mensaje.length} / {MAX_CHARS}</span>
@@ -265,7 +265,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                         <div className="text-center p-8 bg-gray-900 rounded-[2.5rem] border border-yellow-500/20 w-full shadow-lg relative overflow-hidden">
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-500/10 blur-3xl rounded-full"></div>
                             <div className="w-16 h-16 bg-yellow-500/10 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-5 border border-yellow-500/20 relative z-10 shadow-inner">
-                                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd"/></svg>
+                                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" /></svg>
                             </div>
                             <h3 className="text-xl font-black text-white mb-2 uppercase relative z-10 tracking-tight">Análisis Visual VIP</h3>
                             <p className="text-gray-400 text-sm mb-8 px-2 relative z-10 leading-relaxed font-medium">Extrae enlaces y detecta suplantación directamente desde capturas de pantalla.</p>
@@ -274,7 +274,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                     ) : (
                         <div className="w-full flex flex-col h-full">
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={manejarSubidaImagen} />
-                            
+
                             {!imagenPreview ? (
                                 <div onClick={() => fileInputRef.current.click()} className="group border-2 border-dashed border-gray-600 bg-gray-900/50 hover:bg-blue-500/5 transition-all duration-300 rounded-[2.5rem] p-8 flex-1 flex flex-col items-center justify-center cursor-pointer mb-5 min-h-[200px] shadow-inner">
                                     <div className="w-14 h-14 bg-gray-800 group-hover:bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center mb-4 transition-all duration-300 shadow-sm border border-white/5 group-hover:scale-110">
@@ -285,7 +285,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                             ) : (
                                 <div className="relative rounded-[2rem] overflow-hidden mb-6 flex-1 flex items-center justify-center bg-black border border-gray-700 min-h-[200px] group cursor-pointer shadow-2xl shadow-blue-500/5" onClick={() => !escaneando && fileInputRef.current.click()}>
                                     <img src={imagenPreview} alt="Preview" className={`max-h-full max-w-full object-contain transition-all duration-500 ${escaneando ? 'opacity-30 blur-sm grayscale' : 'opacity-100 group-hover:opacity-70'}`} />
-                                    
+
                                     {!escaneando && (
                                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                             <p className="text-white font-black bg-black/60 px-5 py-2.5 rounded-full backdrop-blur-md text-[10px] uppercase tracking-widest border border-white/20 shadow-lg">Cambiar Foto</p>
@@ -300,7 +300,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                                     )}
                                 </div>
                             )}
-                            
+
                             <button onClick={analizarImagenVIP} disabled={escaneando || !imagenPreview} className={`w-full font-black py-5 rounded-2xl mt-auto transition-all duration-300 text-lg tracking-widest active:scale-95 uppercase ${escaneando || !imagenPreview ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-xl shadow-yellow-500/20'}`}>
                                 {escaneando ? 'Analizando...' : 'Iniciar Análisis Visual'}
                             </button>

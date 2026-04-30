@@ -11,7 +11,7 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
     useEffect(() => {
         const progresoGuardado = localStorage.getItem(STORAGE_KEY);
         if (progresoGuardado) setLeidos(JSON.parse(progresoGuardado));
-        
+
         return () => window.speechSynthesis.cancel();
     }, [STORAGE_KEY]);
 
@@ -35,10 +35,10 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
         const enunciado = new SpeechSynthesisUtterance(texto);
         enunciado.lang = 'es-CL';
         enunciado.rate = 0.9;
-        
+
         enunciado.onstart = () => setIsSpeaking(true);
         enunciado.onend = () => setIsSpeaking(false);
-        
+
         window.speechSynthesis.speak(enunciado);
     };
 
@@ -53,10 +53,10 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
 
     // --- BASE DE DATOS EDUCATIVA EXPANDIDA ---
     const lecciones = [
-        { 
-            id: 1, 
-            titulo: 'Phishing: El Gancho del Miedo', 
-            resumen: 'Suplantación de identidad por correo o web.', 
+        {
+            id: 1,
+            titulo: 'Phishing: El Gancho del Miedo',
+            resumen: 'Suplantación de identidad por correo o web.',
             vulnerabilidad: 'Miedo y Autoridad',
             detalle: 'El atacante envía un correo falso idéntico al de tu banco o Netflix. Te asustan con cuentas suspendidas o deudas inexistentes.',
             profundo: 'El miedo bloquea el juicio crítico. Al entrar en pánico, el usuario entrega sus credenciales en una web clonada sin notar que la URL es falsa.',
@@ -65,10 +65,10 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
             color: 'text-red-400',
             bgGlow: 'hover:shadow-[0_0_20px_rgba(248,113,113,0.15)]'
         },
-        { 
-            id: 2, 
-            titulo: 'Smishing: Trampa en tu Bolsillo', 
-            resumen: 'Mensajes de texto (SMS) fraudulentos.', 
+        {
+            id: 2,
+            titulo: 'Smishing: Trampa en tu Bolsillo',
+            resumen: 'Mensajes de texto (SMS) fraudulentos.',
             vulnerabilidad: 'Urgencia y Curiosidad',
             detalle: 'SMS de "CorreosChile" o "Aduanas" indicando que un paquete está retenido y debes pagar una pequeña tasa para liberarlo.',
             profundo: 'La cercanía del celular baja nuestras defensas. Al ser un monto pequeño, el cerebro lo justifica como un trámite real, entregando los datos de la tarjeta.',
@@ -77,10 +77,10 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
             color: 'text-orange-400',
             bgGlow: 'hover:shadow-[0_0_20px_rgba(251,146,60,0.15)]'
         },
-        { 
-            id: 3, 
-            titulo: 'Vishing: La Voz del Engaño', 
-            resumen: 'Estafas mediante llamadas telefónicas.', 
+        {
+            id: 3,
+            titulo: 'Vishing: La Voz del Engaño',
+            resumen: 'Estafas mediante llamadas telefónicas.',
             vulnerabilidad: 'Presión y Rapidez',
             detalle: 'Un "ejecutivo de seguridad" te llama diciendo que hay una compra sospechosa en curso y necesita que le dictes un código que te llegará al celular.',
             profundo: 'La voz humana genera confianza. El estafador te mantiene en línea para que no tengas tiempo de pensar o llamar al banco realmente.',
@@ -89,10 +89,10 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
             color: 'text-blue-400',
             bgGlow: 'hover:shadow-[0_0_20px_rgba(96,165,250,0.15)]'
         },
-        { 
-            id: 4, 
-            titulo: 'Quishing: El QR Malicioso', 
-            resumen: 'Ataques mediante códigos QR falsos.', 
+        {
+            id: 4,
+            titulo: 'Quishing: El QR Malicioso',
+            resumen: 'Ataques mediante códigos QR falsos.',
             vulnerabilidad: 'Curiosidad Tecnológica',
             detalle: 'Pegan QRs falsos sobre los reales en restaurantes o paraderos. Al escanearlo, descargas un archivo infectado o vas a una web de phishing.',
             profundo: 'Confiamos ciegamente en los códigos QR. No podemos leer la URL antes de que el navegador la abra, lo que facilita el acceso a sitios maliciosos.',
@@ -101,10 +101,10 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
             color: 'text-green-400',
             bgGlow: 'hover:shadow-[0_0_20px_rgba(74,222,128,0.15)]'
         },
-        { 
-            id: 5, 
-            titulo: 'SIM Swapping: Secuestro de Línea', 
-            resumen: 'Clonación de tu número telefónico.', 
+        {
+            id: 5,
+            titulo: 'SIM Swapping: Secuestro de Línea',
+            resumen: 'Clonación de tu número telefónico.',
             vulnerabilidad: 'Fallas de Validación',
             detalle: 'El atacante engaña a la operadora para transferir tu número a un chip que él controla. Así, recibe tus códigos de verificación bancarios.',
             profundo: 'Una vez que controlan tu SIM, pueden restablecer tus contraseñas de correo y banco usando la recuperación por SMS.',
@@ -113,10 +113,10 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
             color: 'text-purple-400',
             bgGlow: 'hover:shadow-[0_0_20px_rgba(192,132,252,0.15)]'
         },
-        { 
-            id: 6, 
-            titulo: 'Ingeniería Social: El Falso Premio', 
-            resumen: 'Manipulación mediante recompensas.', 
+        {
+            id: 6,
+            titulo: 'Ingeniería Social: El Falso Premio',
+            resumen: 'Manipulación mediante recompensas.',
             vulnerabilidad: 'Ambición y Gratificación',
             detalle: 'Ganas un concurso en el que no participaste. Solo debes pagar el "seguro de envío" del premio para recibirlo.',
             profundo: 'La dopamina del premio ignora las alertas. Los atacantes crean una ilusión de beneficio que nubla el sentido común del usuario.',
@@ -132,8 +132,12 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
     return (
         <div className="flex-1 w-full overflow-y-auto no-scrollbar px-4 sm:px-6 pt-6 pb-32 animate-fade-in font-sans">
             <header className="mb-8">
-                <h2 className="text-3xl font-black text-white leading-tight">Academia <br/><span className="text-blue-500 underline decoration-4 underline-offset-4">Antifraude</span></h2>
-                <p className="text-gray-400 text-sm font-medium mt-4 leading-relaxed">Educación inclusiva para proteger el eslabón más débil: el ser humano.</p>
+                <h2 className="text-4xl font-black text-white leading-tight tracking-tight">
+                    Academia{' '}
+                    <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+                        Digital
+                    </span>
+                </h2>             <p className="text-gray-400 text-sm font-medium mt-4 leading-relaxed">Educación inclusiva para proteger el eslabón más débil: el ser humano.</p>
             </header>
 
             {/* Progreso */}
@@ -151,10 +155,10 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
                 {lecciones.map((item) => {
                     const isExp = expandido === item.id;
                     const isRead = leidos.includes(item.id);
-                    
+
                     return (
-                        <article 
-                            key={item.id} 
+                        <article
+                            key={item.id}
                             onClick={() => toggleExpandir(item.id)}
                             className={`group rounded-3xl border transition-all duration-500 cursor-pointer overflow-hidden ${isExp ? 'bg-gray-800/90 border-blue-500/40 shadow-2xl' : `bg-gray-900 border-white/5 ${item.bgGlow}`}`}
                         >
@@ -180,7 +184,7 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
                                 <div className={`grid transition-all duration-500 ease-in-out ${isExp ? 'grid-rows-[1fr] opacity-100 mt-6' : 'grid-rows-[0fr] opacity-0'}`}>
                                     <div className="overflow-hidden">
                                         <div className="pt-5 border-t border-gray-700/50 space-y-5">
-                                            <button 
+                                            <button
                                                 onClick={(e) => { e.stopPropagation(); hablar(`Lección: ${item.titulo}. El engaño consiste en: ${item.detalle}. ¿Cómo prevenirlo? ${item.prevencion}`, item.id); }}
                                                 className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${isSpeaking && expandido === item.id ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}
                                             >
@@ -203,7 +207,7 @@ const Educacion = ({ usuario, isPremium, setTabActiva }) => {
                                             </div>
 
                                             {!isRead && (
-                                                <button 
+                                                <button
                                                     onClick={(e) => marcarComoLeido(item.id, e)}
                                                     className="w-full bg-blue-600 text-white font-black py-4 rounded-xl text-xs uppercase shadow-lg active:scale-95"
                                                 >

@@ -2,16 +2,16 @@ import { useState } from 'react';
 import api from '../services/api';
 
 const Registro = ({ onRegistroSuccess, irALogin }) => {
-    const [form, setForm] = useState({ 
-        nombre: '', 
-        ap_paterno: '', 
-        ap_materno: '', 
-        fecha_nacimiento: '', 
-        celular: '', 
-        correo: '', 
-        password: '' 
+    const [form, setForm] = useState({
+        nombre: '',
+        ap_paterno: '',
+        ap_materno: '',
+        fecha_nacimiento: '',
+        celular: '',
+        correo: '',
+        password: ''
     });
-    
+
     const [error, setError] = useState('');
     const [cargando, setCargando] = useState(false);
     const [aceptaTerminos, setAceptaTerminos] = useState(false);
@@ -19,7 +19,7 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
 
     const manejarRegistro = async (e) => {
         e.preventDefault();
-        
+
         // Validación obligatoria de términos según normativa chilena de consentimiento
         if (!aceptaTerminos) {
             setError('Para registrarse, debe aceptar las políticas de privacidad y protección de datos.');
@@ -47,8 +47,12 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                     <button onClick={irALogin} className="text-gray-500 hover:text-white transition-colors mb-4 flex items-center text-sm font-bold active:scale-95">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7m0 0l7-7m-7 7h18" /></svg> Volver
                     </button>
-                    <h2 className="text-3xl font-black text-white tracking-tight leading-none">Nueva <br/><span className="text-blue-500">Cuenta</span></h2>
-                    <p className="text-gray-400 text-xs mt-3 uppercase font-black tracking-widest opacity-60">Escudo Heurístico v4.0</p>
+                    <h2 className="text-4xl font-black text-white leading-tight tracking-tight">
+                        Registrar{' '}
+                        <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+                            Cuenta
+                        </span>
+                    </h2>                     <p className="text-gray-400 text-xs mt-3 uppercase font-black tracking-widest opacity-60">Escudo Heurístico v4.0</p>
                 </div>
 
                 {error && (
@@ -57,33 +61,33 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                         {error}
                     </div>
                 )}
-                
+
                 <form onSubmit={manejarRegistro} className="space-y-4">
-                    <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Nombre" onChange={(e) => setForm({...form, nombre: e.target.value})} required />
-                    
+                    <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Nombre" onChange={(e) => setForm({ ...form, nombre: e.target.value })} required />
+
                     <div className="grid grid-cols-2 gap-3">
-                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Paterno" onChange={(e) => setForm({...form, ap_paterno: e.target.value})} required />
-                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Materno" onChange={(e) => setForm({...form, ap_materno: e.target.value})} required />
+                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Paterno" onChange={(e) => setForm({ ...form, ap_paterno: e.target.value })} required />
+                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Materno" onChange={(e) => setForm({ ...form, ap_materno: e.target.value })} required />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                         <div className="relative">
                             <label className="absolute -top-2 left-4 bg-gray-900 px-1 text-[9px] font-black text-blue-400 uppercase tracking-widest z-20">Nacimiento</label>
-                            <input type="date" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all [color-scheme:dark] text-sm outline-none" onChange={(e) => setForm({...form, fecha_nacimiento: e.target.value})} required />
+                            <input type="date" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all [color-scheme:dark] text-sm outline-none" onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })} required />
                         </div>
-                        <input type="tel" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Celular" onChange={(e) => setForm({...form, celular: e.target.value})} required />
+                        <input type="tel" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Celular" onChange={(e) => setForm({ ...form, celular: e.target.value })} required />
                     </div>
 
-                    <input type="email" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Correo electrónico" onChange={(e) => setForm({...form, correo: e.target.value})} required />
-                    
-                    <input type="password" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Contraseña segura" onChange={(e) => setForm({...form, password: e.target.value})} required />
+                    <input type="email" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Correo electrónico" onChange={(e) => setForm({ ...form, correo: e.target.value })} required />
+
+                    <input type="password" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Contraseña segura" onChange={(e) => setForm({ ...form, password: e.target.value })} required />
 
                     {/* SECCIÓN TÉRMINOS Y CONDICIONES (NORMATIVA CHILENA) */}
                     <div className="bg-white/5 p-4 rounded-2xl border border-white/5 mt-6 mb-2">
                         <label className="flex items-start gap-3 cursor-pointer group">
                             <div className="relative mt-1">
-                                <input 
-                                    type="checkbox" 
+                                <input
+                                    type="checkbox"
                                     checked={aceptaTerminos}
                                     onChange={(e) => setAceptaTerminos(e.target.checked)}
                                     className="peer h-5 w-5 appearance-none rounded-lg border-2 border-gray-600 bg-black/50 checked:bg-blue-600 checked:border-blue-500 transition-all cursor-pointer"
@@ -113,7 +117,7 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                             </h3>
                             <button onClick={() => setVerModal(false)} className="text-gray-500 hover:text-white p-2 bg-white/5 rounded-full transition-colors"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
                         </header>
-                        
+
                         <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pr-2">
                             <section>
                                 <h4 className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">1. Marco Legal Chileno (Ley 19.628)</h4>
@@ -150,7 +154,7 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                             </div>
                         </div>
 
-                        <button 
+                        <button
                             onClick={() => setAceptaTerminos(true) || setVerModal(false)}
                             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl mt-8 shadow-lg active:scale-95 transition-all text-xs uppercase tracking-widest shrink-0"
                         >

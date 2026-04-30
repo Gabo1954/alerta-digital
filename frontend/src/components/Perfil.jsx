@@ -6,29 +6,29 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
 
     return (
         <div className="flex-1 w-full px-5 pt-6 pb-20 animate-fade-in-up font-sans">
-            
+
             {/* ENCABEZADO */}
             <header className="mb-8">
-                <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 leading-tight tracking-tighter">
-                    Centro de <br/>
-                    <span className="text-blue-500 bg-none">Seguridad</span>
+                <h2 className="text-4xl font-black text-white leading-tight tracking-tight">
+                    Centro de{' '}
+                    <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+                        Seguridad
+                    </span>
                 </h2>
                 <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-2">ID: {usuario?.id || 'LOCAL-USER'}</p>
             </header>
 
             {/* TARJETA DE IDENTIDAD */}
-            <div className={`relative overflow-hidden rounded-[2.5rem] border p-8 mb-8 shadow-2xl transition-all duration-500 ${
-                isPremium 
-                ? 'bg-gradient-to-br from-gray-900 via-gray-950 to-black border-yellow-500/30' 
+            <div className={`relative overflow-hidden rounded-[2.5rem] border p-8 mb-8 shadow-2xl transition-all duration-500 ${isPremium
+                ? 'bg-gradient-to-br from-gray-900 via-gray-950 to-black border-yellow-500/30'
                 : 'bg-gray-900/50 border-white/5'
-            }`}>
+                }`}>
                 {isPremium && <div className="absolute -top-20 -right-20 w-64 h-64 bg-yellow-500/10 blur-[80px] rounded-full"></div>}
-                
+
                 <div className="relative z-10 flex flex-col items-center">
                     <div className="relative mb-5">
-                        <div className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl font-black text-white shadow-2xl border-4 border-gray-900 ${
-                            isPremium ? 'bg-linear-to-tr from-yellow-600 to-yellow-400' : 'bg-blue-600'
-                        }`}>
+                        <div className={`w-24 h-24 rounded-full flex items-center justify-center text-4xl font-black text-white shadow-2xl border-4 border-gray-900 ${isPremium ? 'bg-linear-to-tr from-yellow-600 to-yellow-400' : 'bg-blue-600'
+                            }`}>
                             {inicial}
                         </div>
                         {isPremium && (
@@ -41,9 +41,8 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
                     <h3 className="text-2xl font-black text-white text-center tracking-tight">{nombreCompleto}</h3>
                     <p className="text-gray-400 text-sm mb-6 font-medium">{usuario?.correo}</p>
 
-                    <div className={`px-5 py-2 rounded-2xl border text-[10px] font-black uppercase tracking-[0.2em] shadow-inner ${
-                        isPremium ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-500' : 'bg-blue-500/10 border-blue-500/40 text-blue-400'
-                    }`}>
+                    <div className={`px-5 py-2 rounded-2xl border text-[10px] font-black uppercase tracking-[0.2em] shadow-inner ${isPremium ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-500' : 'bg-blue-500/10 border-blue-500/40 text-blue-400'
+                        }`}>
                         {isPremium ? 'Escudo PRO Activo' : 'Protección Básica'}
                     </div>
                 </div>
@@ -73,8 +72,8 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
             </div>
 
             {/* CERRAR SESIÓN */}
-            <button 
-                onClick={onLogout} 
+            <button
+                onClick={onLogout}
                 className="w-full bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white font-black py-5 rounded-[2rem] transition-all duration-300 border border-red-500/20 shadow-lg flex justify-center items-center gap-3 text-sm active:scale-95 uppercase tracking-widest"
             >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
