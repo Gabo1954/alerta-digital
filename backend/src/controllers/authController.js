@@ -19,12 +19,12 @@ exports.registrarUsuario = async (req, res) => {
         const passwordHashed = await bcrypt.hash(password, salt);
         const idTipoUsuario = 1; // 1 = Usuario Normal
 
-        // LA SOLUCIÓN: Agregamos RETURNING id_usuario INTO :out_id
+        // Agregamos RETURNING id_usuario INTO :out_id
         const sql = `
             INSERT INTO usuario (
                 nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, password, es_vip, tipo_usuario_id_tipo_usuario
             ) VALUES (
-                :nombre, :ap_paterno, :ap_materno, TO_DATE(:fecha_nacimiento, 'YYYY-MM-DD'), :correo, :celular, :password, 0, :tipo_usuario
+                :nombre, :ap_paterno, :ap_materno, TO_DATE(:fecha_nacimiento, 'DD/MM/YYYY'), :correo, :celular, :password, 0, :tipo_usuario
             ) RETURNING id_usuario INTO :out_id
         `;
 
@@ -32,7 +32,7 @@ exports.registrarUsuario = async (req, res) => {
             nombre: nombre,
             ap_paterno: ap_paterno || null,
             ap_materno: ap_materno || null,
-            fecha_nacimiento: fecha_nacimiento || null, 
+            fecha_nacimiento: fecha_nacimiento || null,
             correo: correo,
             celular: celular || null,
             password: passwordHashed,
@@ -43,13 +43,13 @@ exports.registrarUsuario = async (req, res) => {
         const result = await execute(sql, binds);
         const nuevoIdUsuario = result.outBinds.out_id[0]; // Extraemos el ID recién creado
 
-        res.status(201).json({ 
+        res.status(201).json({
             mensaje: '¡Usuario registrado exitosamente en Oracle Cloud!',
-            usuario: { 
+            usuario: {
                 id: nuevoIdUsuario,
-                nombre, 
+                nombre,
                 correo,
-                es_vip: false 
+                es_vip: false
             },
             // AHORA EL TOKEN SÍ TIENE EL ID ADENTRO
             token: jwt.sign({ id: nuevoIdUsuario, correo, rol: idTipoUsuario }, process.env.JWT_SECRET || 'super_secreto_alerta_digital_duoc', { expiresIn: '8h' })
@@ -108,7 +108,7 @@ exports.loginUsuario = async (req, res) => {
                 id: usuario.ID_USUARIO,
                 nombre: usuario.NOMBRE,
                 correo: usuario.CORREO,
-                es_vip: usuario.ES_VIP === 1 
+                es_vip: usuario.ES_VIP === 1
             }
         });
 
@@ -134,7 +134,7 @@ exports.googleLogin = async (req, res) => {
             idToken: token,
             audience: CLIENT_ID,
         });
-        
+
         const { email, name } = ticket.getPayload();
 
         const sqlBuscar = `SELECT id_usuario, nombre, correo, es_vip, tipo_usuario_id_tipo_usuario FROM usuario WHERE correo = :email`;
@@ -148,13 +148,13 @@ exports.googleLogin = async (req, res) => {
                 VALUES (:nombre, :correo, 'AUTH_GOOGLE_PROTECTED', 0, 1)
                 RETURNING id_usuario INTO :out_id
             `;
-            
+
             const resultInsert = await execute(sqlInsert, {
                 nombre: name,
                 correo: email,
-                out_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT } 
+                out_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
             });
-            
+
             usuario = {
                 id: resultInsert.outBinds.out_id[0],
                 nombre: name,

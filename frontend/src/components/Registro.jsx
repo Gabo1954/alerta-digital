@@ -20,21 +20,46 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
     const manejarRegistro = async (e) => {
         e.preventDefault();
 
-        // Validación obligatoria de términos según normativa chilena de consentimiento
+        //Validación de términos
         if (!aceptaTerminos) {
             setError('Para registrarse, debe aceptar las políticas de privacidad y protección de datos.');
             return;
         }
 
-        setError(''); setCargando(true);
+        // Validación celular
+        const celularRegex = /^\d{9}$/;
+        if (!celularRegex.test(form.celular)) {
+            setError('El número de celular debe contener exactamente 9 dígitos (ej: 912345678).');
+            return;
+        }
+
+        // Validación de la contraseña 1 mayúscula mínimo 
+        const passwordRegex = /[A-Z]/;
+        if (!passwordRegex.test(form.password)) {
+            setError('Por seguridad, la contraseña debe incluir al menos una letra mayúscula.');
+            return;
+        }
+
+        setError('');
+        setCargando(true);
+
+        const datosAEnviar = { ...form };
+
+        if (datosAEnviar.fecha_nacimiento) {
+            const [anio, mes, dia] = datosAEnviar.fecha_nacimiento.split('-');
+            datosAEnviar.fecha_nacimiento = `${dia}/${mes}/${anio}`;
+        }
+
         try {
-            const respuesta = await api.post('/auth/registro', form);
+            const respuesta = await api.post('/auth/registro', datosAEnviar);
             localStorage.setItem('token', respuesta.data.token);
             localStorage.setItem('usuario', JSON.stringify(respuesta.data.usuario));
             onRegistroSuccess(respuesta.data.usuario);
         } catch (err) {
             setError(err.response?.data?.error || 'Error al crear la cuenta. Intente de nuevo.');
-        } finally { setCargando(false); }
+        } finally {
+            setCargando(false);
+        }
     };
 
     return (
@@ -52,7 +77,8 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                         <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
                             Cuenta
                         </span>
-                    </h2>                     <p className="text-gray-400 text-xs mt-3 uppercase font-black tracking-widest opacity-60">Escudo Heurístico v4.0</p>
+                    </h2>
+                    <p className="text-gray-400 text-xs mt-3 uppercase font-black tracking-widest opacity-60">Escudo Heurístico v4.0</p>
                 </div>
 
                 {error && (
@@ -75,7 +101,14 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                             <label className="absolute -top-2 left-4 bg-gray-900 px-1 text-[9px] font-black text-blue-400 uppercase tracking-widest z-20">Nacimiento</label>
                             <input type="date" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all [color-scheme:dark] text-sm outline-none" onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })} required />
                         </div>
-                        <input type="tel" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Celular" onChange={(e) => setForm({ ...form, celular: e.target.value })} required />
+                        <input
+                            type="tel"
+                            maxLength="9"
+                            className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none"
+                            placeholder="Celular (9 dígitos)"
+                            onChange={(e) => setForm({ ...form, celular: e.target.value })}
+                            required
+                        />
                     </div>
 
                     <input type="email" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Correo electrónico" onChange={(e) => setForm({ ...form, correo: e.target.value })} required />
@@ -106,7 +139,7 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                 </form>
             </div>
 
-            {/* MODAL DE TÉRMINOS Y CONDICIONES (DISEÑO LEGAL PROFESIONAL) */}
+            {/* MODAL DE TÉRMINOS Y CONDICIONES */}
             {verModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fade-in">
                     <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setVerModal(false)}></div>
@@ -129,7 +162,7 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                             <section>
                                 <h4 className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">2. Acceso Transparente a Mensajes</h4>
                                 <p className="text-gray-300 text-sm leading-relaxed">
-                                    El acceso a permisos de lectura de mensajes tiene como **fin exclusivo** agilizar el ingreso de contenido al motor de análisis para una detección rápida de fraudes. Bajo ningún concepto se utilizará este acceso para vigilancia o monitoreo no relacionado con la ciberseguridad personal del usuario.
+                                    El acceso a permisos de lectura de mensajes tiene como **fin exclusivo** agilizar el ingreso de contenido al motor de análisis para una detección rápida de fraudes. Bajo ningún concepto se utilizará este acceso para vigilancia o monitoreo no relacionado con la ciberseguridad personal de los usuarios.
                                 </p>
                             </section>
 
@@ -155,7 +188,7 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                         </div>
 
                         <button
-                            onClick={() => setAceptaTerminos(true) || setVerModal(false)}
+                            onClick={() => { setAceptaTerminos(true); setVerModal(false); }}
                             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl mt-8 shadow-lg active:scale-95 transition-all text-xs uppercase tracking-widest shrink-0"
                         >
                             Acepto y cierro
