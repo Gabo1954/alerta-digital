@@ -1,6 +1,6 @@
 const { execute } = require('../config/db');
 const oracledb = require('oracledb');
-const analizadorServicio = require('../services/AnalizadorServicio');
+const analizadorServicio = require('../services/analizadorServicio');
 const axios = require('axios'); 
 
 // ==========================================
