@@ -1,6 +1,6 @@
 const { execute } = require('../config/db');
 const oracledb = require('oracledb');
-const analyzerService = require('../services/AnalyzerService');
+const analizadorServicio = require('../services/AnalizadorServicio');
 const axios = require('axios'); 
 
 // ==========================================
@@ -15,7 +15,7 @@ exports.analizarMensaje = async (req, res) => {
     if (!contenido) return res.status(400).json({ error: 'Debes enviar el contenido del mensaje a analizar.' });
 
     try {
-        const reporteAnalisis = await analyzerService.evaluarMensaje(contenido);
+        const reporteAnalisis = await analizadorServicio.evaluarMensaje(contenido);
 
         const sqlMensaje = `
             INSERT INTO mensaje (contenido, fecha_recepcion, usuario_id_usuario) 
@@ -101,7 +101,7 @@ exports.analizarImagenVIP = async (req, res) => {
             });
         }
 
-        const reporteAnalisis = await analyzerService.evaluarMensaje(textoExtraido);
+        const reporteAnalisis = await analizadorServicio.evaluarMensaje(textoExtraido);
 
         const sqlMensaje = `
             INSERT INTO mensaje (contenido, fecha_recepcion, usuario_id_usuario) 
@@ -158,7 +158,7 @@ exports.feedbackMensaje = async (req, res) => {
     }
 
     try {
-        const resultadoEntrenamiento = await analyzerService.entrenarModelo(contenido, esFraude);
+        const resultadoEntrenamiento = await analizadorServicio.entrenarModelo(contenido, esFraude);
         console.log(`IA Actualizada en Oracle: Usuario reportó texto como ${esFraude ? 'FRAUDE' : 'SEGURO'}`);
         res.status(200).json({ 
             mensaje: 'Feedback procesado exitosamente.',

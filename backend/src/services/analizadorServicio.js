@@ -4,7 +4,7 @@ const { execute } = require('../config/db');
 const STOP_WORDS = new Set(['para', 'como', 'este', 'esta', 'estos', 'estas', 'pero', 'todo', 'toda', 'hace', 'solo', 'tienes', 'tiene', 'desde', 'sobre']);
 const MAX_WEIGHT = 100.0; 
 
-class AnalyzerService {
+class AnalizadorServicio {
     tokenize(text) {
         return text.toLowerCase()
             .replace(/[^\w\s]/gi, '') 
@@ -110,4 +110,4 @@ class AnalyzerService {
         return { message: `Aprendizaje completado. ${tokensActualizados} patrones re-calibrados.` };
     }
 }
-module.exports = new AnalyzerService();
+module.exports = new AnalizadorServicio();
