@@ -17,26 +17,49 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
     const [aceptaTerminos, setAceptaTerminos] = useState(false);
     const [verModal, setVerModal] = useState(false);
 
+    // FUNCIÓN DE VALIDACIÓN COMPLETA
+    const validarFormulario = () => {
+        if (!aceptaTerminos) return 'Para registrarse, debe aceptar las políticas de privacidad y protección de datos.';
+
+        // Validar que nombre y apellidos solo tengan letras
+        const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+        if (!regexLetras.test(form.nombre)) return 'El nombre solo debe contener letras.';
+        if (!regexLetras.test(form.ap_paterno)) return 'El apellido paterno solo debe contener letras.';
+        if (!regexLetras.test(form.ap_materno)) return 'El apellido materno solo debe contener letras.';
+
+        // Validar formato de correo
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(form.correo)) return 'Ingrese un correo electrónico válido.';
+
+        // Validar celular (exactamente 9 dígitos)
+        const celularRegex = /^\d{9}$/;
+        if (!celularRegex.test(form.celular)) return 'El número de celular debe contener exactamente 9 dígitos (ej: 912345678).';
+
+        // Validar contraseña (min 8 caracteres, 1 mayúscula, 1 número)
+        const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
+        if (!passwordRegex.test(form.password)) return 'La contraseña debe tener al menos 8 caracteres, incluir una mayúscula y un número.';
+
+        // Validar mayoría de edad (18 años)
+        if (!form.fecha_nacimiento) return 'La fecha de nacimiento es obligatoria.';
+        const fechaNac = new Date(form.fecha_nacimiento);
+        const hoy = new Date();
+        let edad = hoy.getFullYear() - fechaNac.getFullYear();
+        const mes = hoy.getMonth() - fechaNac.getMonth();
+        if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
+        
+        if (edad < 18) return 'Debes ser mayor de 18 años para utilizar esta plataforma de seguridad.';
+
+        return null; // Si pasa todo, retorna null (sin errores)
+    };
+
+    // PROCESAMIENTO DEL REGISTRO
     const manejarRegistro = async (e) => {
         e.preventDefault();
 
-        //Validación de términos
-        if (!aceptaTerminos) {
-            setError('Para registrarse, debe aceptar las políticas de privacidad y protección de datos.');
-            return;
-        }
-
-        // Validación celular
-        const celularRegex = /^\d{9}$/;
-        if (!celularRegex.test(form.celular)) {
-            setError('El número de celular debe contener exactamente 9 dígitos (ej: 912345678).');
-            return;
-        }
-
-        // Validación de la contraseña 1 mayúscula mínimo 
-        const passwordRegex = /[A-Z]/;
-        if (!passwordRegex.test(form.password)) {
-            setError('Por seguridad, la contraseña debe incluir al menos una letra mayúscula.');
+        // 1. Ejecutar todas las validaciones
+        const errorValidacion = validarFormulario();
+        if (errorValidacion) {
+            setError(errorValidacion);
             return;
         }
 
@@ -45,11 +68,13 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
 
         const datosAEnviar = { ...form };
 
+        // 2. Formatear la fecha para Oracle
         if (datosAEnviar.fecha_nacimiento) {
             const [anio, mes, dia] = datosAEnviar.fecha_nacimiento.split('-');
             datosAEnviar.fecha_nacimiento = `${dia}/${mes}/${anio}`;
         }
 
+        // 3. Enviar al backend
         try {
             const respuesta = await api.post('/auth/registro', datosAEnviar);
             localStorage.setItem('token', respuesta.data.token);

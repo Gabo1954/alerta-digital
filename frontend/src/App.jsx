@@ -8,12 +8,13 @@ import Educacion from './components/Educacion';
 import Suscripcion from './components/Suscripcion';
 import PagoResultado from './components/PagoResultado';
 import Perfil from './components/Perfil';
+import RestablecerPassword from './components/RestablecerPassword'; // <-- 1. IMPORTAMOS EL COMPONENTE
 
 function App() {
   const [usuario, setUsuario] = useState(null);
   // Estados: 'inicio', 'historial', 'aprender', 'ayuda', 'pro', 'perfil'
-  const [tabActiva, setTabActiva] = useState('inicio'); 
-  const [isPremium, setIsPremium] = useState(false); 
+  const [tabActiva, setTabActiva] = useState('inicio');
+  const [isPremium, setIsPremium] = useState(false);
   const [vistaAuth, setVistaAuth] = useState('login');
 
   const path = window.location.pathname;
@@ -28,29 +29,33 @@ function App() {
   // --- SOLUCIÓN A LA PÉRDIDA DE PROGRESO (ELIMINACIÓN SELECTIVA) ---
   const salir = () => {
     if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-        localStorage.removeItem('usuario');
-        localStorage.removeItem('token');
-        localStorage.removeItem('isPro');
-        
-        // El progreso educativo (progreso_email@...) se mantiene en el dispositivo
-        setUsuario(null);
-        setIsPremium(false);
-        window.location.href = '/';
+      localStorage.removeItem('usuario');
+      localStorage.removeItem('token');
+      localStorage.removeItem('isPro');
+
+      // El progreso educativo (progreso_email@...) se mantiene en el dispositivo
+      setUsuario(null);
+      setIsPremium(false);
+      window.location.href = '/';
     }
   };
 
+  // --- RUTAS PÚBLICAS ABSOLUTAS ---
   if (path === '/pago-resultado') return <PagoResultado />;
+  if (path === '/restablecer-password') return <RestablecerPassword />; // <-- 2. AGREGAMOS LA RUTA AQUÍ
 
+  // --- CONTROL DE ACCESO ---
   if (!usuario) {
-    return vistaAuth === 'login' 
+    return vistaAuth === 'login'
       ? <Login onLoginSuccess={setUsuario} irARegistro={() => setVistaAuth('registro')} />
       : <Registro onRegistroSuccess={setUsuario} irALogin={() => setVistaAuth('login')} />;
   }
 
+  // --- VISTA PRINCIPAL DEL USUARIO AUTENTICADO ---
   return (
     <div className="h-dvh w-full bg-black flex justify-center selection:bg-blue-500 selection:text-white">
       <div className="w-full max-w-md bg-gray-950 h-full relative flex flex-col overflow-hidden shadow-2xl">
-        
+
         {/* HEADER NATIVO PROFESIONAL */}
         <header className="pt-safe bg-gray-950/90 backdrop-blur-2xl border-b border-white/5 z-50 shrink-0 w-full">
           <div className="px-5 pt-3 pb-4 flex justify-between items-center w-full">
@@ -73,15 +78,15 @@ function App() {
 
             {/* Accesos rápidos de Usuario */}
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setTabActiva('perfil')} 
+              <button
+                onClick={() => setTabActiva('perfil')}
                 className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all active:scale-90 overflow-hidden font-black text-xs ${tabActiva === 'perfil' ? 'bg-blue-600 text-white border-blue-400' : 'bg-white/5 text-gray-400 border-white/10'}`}
               >
                 {usuario.nombre?.charAt(0).toUpperCase()}
               </button>
 
-              <button 
-                onClick={salir} 
+              <button
+                onClick={salir}
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90 shrink-0 border border-white/5"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -95,7 +100,7 @@ function App() {
         {/* CONTENEDOR DE VISTAS (SCROLL INTERNO) */}
         <main className="flex-1 overflow-y-auto no-scrollbar pb-28 pt-2 relative scroll-smooth bg-gray-950">
           {isPremium && <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-yellow-500/5 blur-[120px] pointer-events-none"></div>}
-          
+
           {tabActiva === 'inicio' && <Analizador isPremium={isPremium} setTabActiva={setTabActiva} />}
           {tabActiva === 'historial' && <Historial setTabActiva={setTabActiva} />}
           {tabActiva === 'aprender' && <Educacion usuario={usuario} isPremium={isPremium} setTabActiva={setTabActiva} />}
@@ -107,11 +112,10 @@ function App() {
         {/* BOTTOM NAVIGATION REFORZADO (5 BOTONES) */}
         <nav className="bg-gray-950/95 backdrop-blur-2xl border-t border-white/5 absolute bottom-0 w-full flex justify-around px-2 pt-3 pb-safe z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
           <NavBtn id="inicio" label="Escáner" icon="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" active={tabActiva} set={setTabActiva} />
-          <NavBtn id="aprender" label="Aprender" icon="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" active={tabActiva} set={setTabActiva} />
-          
-          {/* NUEVO BOTÓN S.O.S */}
+          <NavBtn id="aprender" label="Aprender" icon="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477-4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" active={tabActiva} set={setTabActiva} />
+
           <NavBtn id="ayuda" label="S.O.S" icon="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" active={tabActiva} set={setTabActiva} />
-          
+
           <NavBtn id="perfil" label="Cuenta" icon="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" active={tabActiva} set={setTabActiva} />
           <NavBtn id="pro" label={isPremium ? "VIP" : "PRO"} icon="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" active={tabActiva} set={setTabActiva} gold={isPremium} />
         </nav>
@@ -123,7 +127,7 @@ function App() {
 const NavBtn = ({ id, label, icon, active, set, gold }) => (
   <button onClick={() => set(id)} className={`flex flex-col items-center justify-center w-16 mb-2 transition-all active:scale-75 ${active === id ? (gold ? 'text-yellow-400' : 'text-blue-500') : 'text-gray-500'}`}>
     <svg className={`w-7 h-7 mb-1 transition-transform ${active === id ? 'scale-110 drop-shadow-[0_0_8px_currentColor]' : ''}`} fill={active === id ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={active === id ? 0 : 2} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
+      <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
     </svg>
     <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
   </button>
