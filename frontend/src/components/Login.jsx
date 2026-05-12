@@ -10,7 +10,7 @@ const Login = ({ onLoginSuccess, irARegistro }) => {
     const [mensaje, setMensaje] = useState('');
     const [cargando, setCargando] = useState(false);
     
-    // Nuevo estado para la vista de recuperación
+    // estado para la vista de recuperación
     const [vistaRecuperar, setVistaRecuperar] = useState(false);
 
     const manejarSubmit = async (e) => {

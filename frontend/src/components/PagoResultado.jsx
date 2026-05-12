@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import api from '../services/api';
 
 const PagoResultado = () => {
     const [estado, setEstado] = useState('validando');
     const [detalleError, setDetalleError] = useState('');
     const [countdown, setCountdown] = useState(4);
+
+
+    const peticionEnviada = useRef(false);
 
     useEffect(() => {
         const validarTransaccion = async () => {
@@ -16,6 +19,12 @@ const PagoResultado = () => {
                 setDetalleError('No se recibió el token de confirmación.');
                 return;
             }
+
+
+            if (peticionEnviada.current) return;
+
+
+            peticionEnviada.current = true;
 
             try {
                 const { data } = await api.post('/pagos/confirmar', { token_ws: token });
@@ -51,7 +60,7 @@ const PagoResultado = () => {
     return (
         <div className="h-[100dvh] bg-black flex items-center justify-center p-6 text-center font-sans">
             <div className="bg-gray-900/80 backdrop-blur-xl p-10 rounded-[3rem] border border-white/5 shadow-2xl max-w-sm w-full">
-                
+
                 {estado === 'validando' && (
                     <div className="animate-pulse flex flex-col items-center">
                         <div className="h-16 w-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
