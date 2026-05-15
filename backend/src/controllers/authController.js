@@ -9,7 +9,8 @@ const nodemailer = require('nodemailer');
 // 1. REGISTRAR USUARIO (TRADICIONAL)
 // ==========================================
 exports.registrarUsuario = async (req, res) => {
-    const { nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, password } = req.body;
+    // El backend recibe 'celular' ya con el prefijo (ej: +569...)
+const { nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, password } = req.body;
 
     if (!nombre || !correo || !password) {
         return res.status(400).json({ error: 'El nombre, correo y contraseña son obligatorios' });

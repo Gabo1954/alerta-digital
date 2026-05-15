@@ -16,12 +16,12 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
         nombre: '', ap_paterno: '', ap_materno: '', fecha_nacimiento: '', celular: '', correo: '', password: '', confirmar_password: '' 
     });
 
+    const [codigoPais, setCodigoPais] = useState('+56');
     const [error, setError] = useState('');
     const [cargando, setCargando] = useState(false);
     const [aceptaTerminos, setAceptaTerminos] = useState(false);
     const [verModal, setVerModal] = useState(false);
 
-    // FUNCIÓN DE VALIDACIÓN COMPLETA
     const validarFormulario = () => {
         if (!aceptaTerminos) return 'Para registrarse, debe aceptar las políticas de privacidad y protección de datos.';
         const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
@@ -44,7 +44,7 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
         if (mes < 0 || (mes === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
         if (edad < 18) return 'Debes ser mayor de 18 años para utilizar esta plataforma.';
 
-        return null; // Si pasa todo, retorna null (sin errores)
+        return null;
     };
 
     const manejarRegistro = async (e) => {
@@ -84,7 +84,6 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-black p-4 font-sans relative overflow-hidden">
-            {/* Fondo decorativo con profundidad visual */}
             <div className="absolute top-0 left-0 w-full h-full bg-linear-to-br from-blue-900/10 to-black pointer-events-none"></div>
 
             <div className="bg-gray-900/80 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-white/5 max-h-[90vh] overflow-y-auto no-scrollbar relative z-10 animate-fade-in-up">
@@ -93,10 +92,7 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7m0 0l7-7m-7 7h18" /></svg> Volver
                     </button>
                     <h2 className="text-4xl font-black text-white leading-tight tracking-tight">
-                        Registrar{' '}
-                        <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-                            Cuenta
-                        </span>
+                        Registrar <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">Cuenta</span>
                     </h2>
                     <p className="text-gray-400 text-xs mt-3 uppercase font-black tracking-widest opacity-60">Escudo Heurístico v4.0</p>
                 </div>
@@ -104,11 +100,11 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                 {error && <div className="bg-red-500/10 border-l-4 border-red-500 text-red-400 px-4 py-3 rounded-xl mb-6 text-[10px] font-black uppercase flex items-center gap-2">{error}</div>}
 
                 <form onSubmit={manejarRegistro} className="space-y-4">
-                    <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Nombre" onChange={(e) => setForm({ ...form, nombre: e.target.value })} required />
+                    <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all text-sm outline-none" placeholder="Nombre" onChange={(e) => setForm({ ...form, nombre: e.target.value })} required />
 
                     <div className="grid grid-cols-2 gap-3">
-                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Paterno" onChange={(e) => setForm({ ...form, ap_paterno: e.target.value })} required />
-                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Materno" onChange={(e) => setForm({ ...form, ap_materno: e.target.value })} required />
+                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all text-sm outline-none" placeholder="Ap. Paterno" onChange={(e) => setForm({ ...form, ap_paterno: e.target.value })} required />
+                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all text-sm outline-none" placeholder="Ap. Materno" onChange={(e) => setForm({ ...form, ap_materno: e.target.value })} required />
                     </div>
 
                     <div className="grid grid-cols-3 gap-2">
@@ -118,7 +114,12 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                         <input type="tel" className="col-span-2 w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all text-sm outline-none" placeholder="Celular" onChange={(e) => setForm({ ...form, celular: e.target.value })} required />
                     </div>
 
-                    <input type="email" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Correo electrónico" onChange={(e) => setForm({ ...form, correo: e.target.value })} required />
+                    <div className="relative">
+                        <label className="absolute -top-2 left-4 bg-gray-900 px-1 text-[9px] font-black text-blue-400 uppercase tracking-widest z-20">Nacimiento</label>
+                        <input type="date" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all [color-scheme:dark] text-sm outline-none" onChange={(e) => setForm({ ...form, fecha_nacimiento: e.target.value })} required />
+                    </div>
+
+                    <input type="email" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all text-sm outline-none" placeholder="Correo electrónico" onChange={(e) => setForm({ ...form, correo: e.target.value })} required />
 
                     <div className="grid grid-cols-2 gap-3">
                         <input type="password" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all text-sm outline-none" placeholder="Contraseña" onChange={(e) => setForm({ ...form, password: e.target.value })} required />
@@ -137,13 +138,12 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                         </label>
                     </div>
 
-                    <button type="submit" disabled={cargando || !aceptaTerminos} className="w-full font-black py-5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] active:scale-95 transition-all uppercase tracking-widest disabled:opacity-30 disabled:grayscale mt-4 text-xs">
-                        {cargando ? <span className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></span> : 'CREAR MI ESCUDO DIGITAL'}
+                    <button type="submit" disabled={cargando || !aceptaTerminos} className="w-full font-black py-5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white active:scale-95 transition-all uppercase tracking-widest text-xs disabled:opacity-30">
+                        {cargando ? 'PROCESANDO...' : 'CREAR MI ESCUDO DIGITAL'}
                     </button>
                 </form>
             </div>
 
-            {/* MODAL DE TÉRMINOS Y CONDICIONES */}
             {verModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fade-in">
                     <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setVerModal(false)}></div>
@@ -169,12 +169,6 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                                 <h4 className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">4. Derecho de Cancelación</h4>
                                 <p className="text-gray-300 text-sm leading-relaxed">Puede solicitar la eliminación definitiva de su cuenta en cualquier momento desde su perfil, ejerciendo sus derechos ARCO.</p>
                             </section>
-
-                            <div className="bg-blue-500/10 p-5 rounded-2xl border border-blue-500/20 shadow-inner">
-                                <p className="text-blue-300 text-xs font-medium leading-relaxed italic">
-                                    "Alerta Digital está diseñada para proteger al usuario, respetando íntegramente la legislación chilena sobre privacidad y seguridad informática."
-                                </p>
-                            </div>
                         </div>
                         <button onClick={() => { setAceptaTerminos(true); setVerModal(false); }} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl mt-8 shadow-lg active:scale-95 transition-all text-xs uppercase tracking-widest shrink-0">ACEPTAR Y CERRAR</button>
                     </div>

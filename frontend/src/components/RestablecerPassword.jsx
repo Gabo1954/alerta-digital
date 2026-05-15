@@ -34,7 +34,7 @@ const RestablecerPassword = () => {
             return;
         }
 
-        // Validación de Contraseña Segura (Igual que en el registro)
+        // Validación de Contraseña Segura 
         const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
         if (!passwordRegex.test(form.password)) {
             setError('La contraseña debe tener al menos 8 caracteres, una mayúscula y un número.');
@@ -49,7 +49,7 @@ const RestablecerPassword = () => {
                 nuevaPassword: form.password 
             });
             setMensaje(respuesta.data.mensaje);
-            setForm({ password: '', confirmarPassword: '' }); // Limpiar campos
+            setForm({ password: '', confirmarPassword: '' }); // Limpiar
         } catch (err) {
             setError(err.response?.data?.error || 'Error al actualizar la contraseña.');
         } finally {
