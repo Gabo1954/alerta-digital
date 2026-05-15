@@ -31,7 +31,7 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
             localStorage.setItem('token', respuesta.data.token);
             localStorage.setItem('usuario', JSON.stringify(respuesta.data.usuario));
             
-            // LIMPIEZA DE PREVENCIÓN: Un nuevo usuario jamás es VIP por defecto
+            // LIMPIEZA DE PREVENCIÓN: Un nuevo usuario jamás es VIP por defecto a
             localStorage.removeItem('isPro'); 
             
             onRegistroSuccess(respuesta.data.usuario);
