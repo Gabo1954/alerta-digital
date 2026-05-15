@@ -20,7 +20,16 @@ const PagoResultado = () => {
             try {
                 const { data } = await api.post('/pagos/confirmar', { token_ws: token });
                 if (data.autorizado) {
+                    
+                    // SOLUCIÓN ESTADO: Actualizamos ambas variables en localStorage
                     localStorage.setItem('isPro', 'true');
+                    
+                    const usuarioGuardado = JSON.parse(localStorage.getItem('usuario'));
+                    if (usuarioGuardado) {
+                        usuarioGuardado.es_vip = true;
+                        localStorage.setItem('usuario', JSON.stringify(usuarioGuardado));
+                    }
+
                     setEstado('exito');
                     iniciarAutoRedirect();
                 } else {
