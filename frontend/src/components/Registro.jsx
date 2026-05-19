@@ -12,32 +12,63 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
         password: '' 
     });
     
+    const [codigoPais, setCodigoPais] = useState('+56');
+    const [confirmarPassword, setConfirmarPassword] = useState('');
+    
     const [error, setError] = useState('');
     const [cargando, setCargando] = useState(false);
     const [aceptaTerminos, setAceptaTerminos] = useState(false);
     const [verModal, setVerModal] = useState(false);
 
-    const manejarRegistro = async (e) => {
+const manejarRegistro = async (e) => {
         e.preventDefault();
         
+        // 1. Validación de Términos
         if (!aceptaTerminos) {
             setError('Para registrarse, debe aceptar las políticas de privacidad y protección de datos.');
             return;
         }
 
-        setError(''); setCargando(true);
+        // 2. Validación de Celular (Ejemplo: que tenga al menos 8 dígitos)
+        if (form.celular.length < 8) {
+            setError('Por favor, ingresa un número de celular válido.');
+            return;
+        }
+
+        // 3. Validación de Contraseña Fuerte (Mínimo 8 caracteres, 1 mayúscula, 1 número)
+        const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
+        if (!passwordRegex.test(form.password)) {
+            setError('La contraseña debe tener al menos 8 caracteres, una mayúscula y un número por seguridad.');
+            return;
+        }
+
+        // 4. Validación de Coincidencia de Contraseñas
+        if (form.password !== confirmarPassword) {
+            setError('Las contraseñas no coinciden. Por favor, verifícalas.');
+            return;
+        }
+
+        setError(''); 
+        setCargando(true);
+        
         try {
-            const respuesta = await api.post('/auth/registro', form);
+            const datosAEnviar = {
+                ...form,
+                celular: `${codigoPais}${form.celular}`
+            };
+
+            const respuesta = await api.post('/auth/registro', datosAEnviar);
             localStorage.setItem('token', respuesta.data.token);
             localStorage.setItem('usuario', JSON.stringify(respuesta.data.usuario));
             
-            // LIMPIEZA DE PREVENCIÓN: Un nuevo usuario jamás es VIP por defecto a
             localStorage.removeItem('isPro'); 
             
             onRegistroSuccess(respuesta.data.usuario);
         } catch (err) {
             setError(err.response?.data?.error || 'Error al crear la cuenta. Intente de nuevo.');
-        } finally { setCargando(false); }
+        } finally { 
+            setCargando(false); 
+        }
     };
 
     return (
@@ -64,21 +95,40 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                     <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Nombre" onChange={(e) => setForm({...form, nombre: e.target.value})} required />
                     
                     <div className="grid grid-cols-2 gap-3">
-                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Paterno" onChange={(e) => setForm({...form, ap_paterno: e.target.value})} required />
-                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Materno" onChange={(e) => setForm({...form, ap_materno: e.target.value})} required />
+                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Paterno" onChange={(e) => setForm({...form, ap_paterno: e.target.value})} required />
+                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Materno" onChange={(e) => setForm({...form, ap_materno: e.target.value})} required />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                         <div className="relative">
                             <label className="absolute -top-2 left-4 bg-gray-900 px-1 text-[9px] font-black text-blue-400 uppercase tracking-widest z-20">Nacimiento</label>
-                            <input type="date" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all [color-scheme:dark] text-sm outline-none" onChange={(e) => setForm({...form, fecha_nacimiento: e.target.value})} required />
+                            <input type="date" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all [color-scheme:dark] text-sm outline-none" onChange={(e) => setForm({...form, fecha_nacimiento: e.target.value})} required />
                         </div>
-                        <input type="tel" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Celular" onChange={(e) => setForm({...form, celular: e.target.value})} required />
+                        
+                        {/* MODIFICADO: Código de país ahora usa w-2/5 (más grande) y celular w-3/5 */}
+                        <div className="flex gap-2">
+                            <select 
+                                className="w-2/5 bg-black/50 border border-gray-700 text-white rounded-2xl px-2 py-4 focus:border-blue-500 transition-all text-sm outline-none appearance-none text-center cursor-pointer"
+                                value={codigoPais}
+                                onChange={(e) => setCodigoPais(e.target.value)}
+                            >
+                                <option value="+56">🇨🇱 +56</option>
+                                <option value="+54">🇦🇷 +54</option>
+                                <option value="+51">🇵🇪 +51</option>
+                                <option value="+57">🇨🇴 +57</option>
+                                <option value="+52">🇲🇽 +52</option>
+                            </select>
+                            <input type="tel" className="w-3/5 bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Celular" onChange={(e) => setForm({...form, celular: e.target.value})} required />
+                        </div>
                     </div>
 
                     <input type="email" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Correo electrónico" onChange={(e) => setForm({...form, correo: e.target.value})} required />
                     
-                    <input type="password" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Contraseña segura" onChange={(e) => setForm({...form, password: e.target.value})} required />
+                    {/* MODIFICADO: Las contraseñas ahora están en un Grid (una al lado de la otra) */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <input type="password" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Contraseña" onChange={(e) => setForm({...form, password: e.target.value})} required />
+                        <input type="password" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Confirmar" onChange={(e) => setConfirmarPassword(e.target.value)} required />
+                    </div>
 
                     <div className="bg-white/5 p-4 rounded-2xl border border-white/5 mt-6 mb-2">
                         <label className="flex items-start gap-3 cursor-pointer group">
@@ -145,7 +195,7 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
                         </div>
 
                         <button 
-                            onClick={() => setAceptaTerminos(true) || setVerModal(false)}
+                            onClick={() => { setAceptaTerminos(true); setVerModal(false); }}
                             className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl mt-8 shadow-lg active:scale-95 transition-all text-xs uppercase tracking-widest shrink-0"
                         >
                             Acepto y cierro
