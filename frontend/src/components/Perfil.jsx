@@ -8,15 +8,17 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
         <div className="flex-1 w-full px-5 pt-6 pb-20 animate-fade-in-up font-sans">
 
             {/* ENCABEZADO */}
-            <header className="mb-8">
-                <h2 className="text-4xl font-black text-white leading-tight tracking-tight">
-                    Centro de{' '}
-                    <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
-                        Seguridad
-                    </span>
-                </h2>
-                <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-2">ID: {usuario?.id || 'LOCAL-USER'}</p>
-            </header>
+<header className="mb-8 flex flex-col items-center text-center">
+    <h2 className="flex flex-col text-4xl font-black tracking-tighter text-white uppercase leading-none select-none items-center">
+        <span>Centro de</span>
+        <span className="text-3xl font-extralight tracking-normal normal-case italic bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-400 bg-clip-text text-transparent block mt-1 py-1">
+            Seguridad
+        </span>
+    </h2>
+    <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-2">
+        ID: {usuario?.id || 'LOCAL-USER'}
+    </p>
+</header>
 
             {/* TARJETA DE IDENTIDAD */}
             <div className={`relative overflow-hidden rounded-[2.5rem] border p-8 mb-8 shadow-2xl transition-all duration-500 ${isPremium

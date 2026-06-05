@@ -84,12 +84,17 @@ const Contactos = () => {
         <div className="flex-1 w-full overflow-y-auto no-scrollbar pb-40 animate-fade-in font-sans bg-gray-950 relative">
             
             {/* CABECERA (No sticky) */}
-            <header className="mb-2 px-5 pt-8">
-                <h2 className="text-3xl font-black text-white leading-tight tracking-tighter uppercase">
-                    Central de <br/><span className="text-red-500 bg-none italic">Respuesta</span>
-                </h2>
-                <p className="text-gray-500 text-[11px] font-bold uppercase tracking-[0.2em] mt-3 opacity-80">Neutralización de Amenazas Digitales</p>
-            </header>
+<header className="mb-2 px-5 pt-8">
+    <h2 className="flex flex-col tracking-tighter uppercase leading-none">
+        <span className="text-2xl font-light normal-case tracking-wide text-gray-400 italic mb-1">Central de</span>
+        <span className="text-4xl font-black bg-gradient-to-r from-red-500 to-rose-600 bg-clip-text text-transparent drop-shadow-[0_0_15px_rgba(220,38,38,0.3)]">
+            Respuesta
+        </span>
+    </h2>
+    <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mt-3 opacity-60">
+        Neutralización de Amenazas Digitales
+    </p>
+</header>
 
             {/* ZONA DE CONTROLES STICKY (Se queda pegada al hacer scroll) */}
             <div className="sticky top-0 z-30 bg-gray-950/90 backdrop-blur-xl border-b border-white/5 pt-4 pb-4 shadow-xl">
@@ -117,19 +122,20 @@ const Contactos = () => {
                 </div>
 
                 {/* FILTROS POR CHIPS CON ICONOS */}
-                <div className="flex gap-2 overflow-x-auto no-scrollbar px-5 pb-1">
+                <div className="grid grid-cols-4 gap-1 px-4 pb-2">
                     {categoriasUI.map((cat) => (
                         <button
                             key={cat.id}
                             onClick={() => setFiltroActivo(cat.id)}
-                            className={`flex items-center gap-1.5 px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${
+                            className={`flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-tight transition-all border ${
                                 filtroActivo === cat.id 
                                 ? 'bg-red-600 border-red-500 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)]' 
                                 : 'bg-gray-900 border-white/5 text-gray-400 hover:text-gray-200 hover:bg-gray-800'
                             }`}
+                            title={cat.id}
                         >
-                            <span className="text-sm">{cat.icon}</span>
-                            {cat.id}
+                            <span className="text-xs">{cat.icon}</span>
+                            <span className="hidden sm:inline">{cat.id}</span>
                         </button>
                     ))}
                 </div>
@@ -202,12 +208,12 @@ const Contactos = () => {
                 </div>
 
                 {/* NOTA DE INTEGRIDAD LEGAL */}
-                <footer className="mt-12 bg-linear-to-b from-transparent to-red-500/5 p-8 rounded-[3rem] border border-dashed border-red-500/10 text-center">
+                <footer className="mt-12 bg-gradient-to-b from-transparent to-red-500/5 p-8 rounded-[3rem] border border-dashed border-red-500/10 text-center">
                     <div className="flex justify-center mb-4 text-red-500">
                         <svg className="w-8 h-8 opacity-40" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
                     </div>
                     <p className="text-gray-400 text-xs font-medium leading-relaxed italic px-2">
-                        "Conforme a la **Ley N° 19.628**, Alerta Digital provee este directorio oficial de forma informativa para la seguridad de sus datos. No registramos ni almacenamos información sobre sus llamadas."
+                        Conforme a la <span className="font-black text-white">Ley N° 19.628</span>, Alerta Digital provee este directorio oficial de forma informativa para la seguridad de sus datos. No registramos ni almacenamos información sobre sus llamadas.
                     </p>
                     <p className="text-gray-600 text-[9px] font-black uppercase tracking-[0.2em] mt-6 opacity-40">Protocolo de Integridad v4.0.2 - Chile</p>
                 </footer>

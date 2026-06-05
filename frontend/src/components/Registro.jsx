@@ -29,20 +29,82 @@ const manejarRegistro = async (e) => {
             return;
         }
 
-        // 2. Validación de Celular (Ejemplo: que tenga al menos 8 dígitos)
-        if (form.celular.length < 8) {
-            setError('Por favor, ingresa un número de celular válido.');
+        // 2. Validar que todos los campos estén completos
+        if (!form.nombre.trim() || !form.ap_paterno.trim() || !form.ap_materno.trim() || !form.fecha_nacimiento || !form.celular.trim() || !form.correo.trim() || !form.password) {
+            setError('Por favor, completa todos los campos del formulario.');
             return;
         }
 
-        // 3. Validación de Contraseña Fuerte (Mínimo 8 caracteres, 1 mayúscula, 1 número)
-        const passwordRegex = /^(?=.*[A-Z])(?=.*\d).{8,}$/;
+        // 3. Validar que nombre y apellidos solo contengan letras
+        const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]+$/;
+        if (!regexLetras.test(form.nombre.trim())) {
+            setError('El nombre solo debe contener letras.');
+            return;
+        }
+        if (!regexLetras.test(form.ap_paterno.trim())) {
+            setError('El apellido paterno solo debe contener letras.');
+            return;
+        }
+        if (!regexLetras.test(form.ap_materno.trim())) {
+            setError('El apellido materno solo debe contener letras.');
+            return;
+        }
+
+        // 4. Validar longitud mínima de nombres
+        if (form.nombre.trim().length < 2) {
+            setError('El nombre debe tener al menos 2 caracteres.');
+            return;
+        }
+        if (form.ap_paterno.trim().length < 2) {
+            setError('El apellido paterno debe tener al menos 2 caracteres.');
+            return;
+        }
+        if (form.ap_materno.trim().length < 2) {
+            setError('El apellido materno debe tener al menos 2 caracteres.');
+            return;
+        }
+
+        // 5. Validar formato de email
+        const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!regexEmail.test(form.correo.trim())) {
+            setError('Por favor, ingresa un correo electrónico válido.');
+            return;
+        }
+
+        // 6. Validar fecha de nacimiento
+        const fechaNac = new Date(form.fecha_nacimiento);
+        const hoy = new Date();
+        const hace18Anos = new Date();
+        hace18Anos.setFullYear(hace18Anos.getFullYear() - 18);
+
+        if (isNaN(fechaNac.getTime())) {
+            setError('La fecha de nacimiento no es válida.');
+            return;
+        }
+        if (fechaNac > hoy) {
+            setError('La fecha de nacimiento no puede ser en el futuro.');
+            return;
+        }
+        if (fechaNac > hace18Anos) {
+            setError('Debes tener al menos 18 años para registrarte.');
+            return;
+        }
+
+        // 7. Validación de Celular (8-15 dígitos)
+        const regexCelular = /^\d{8,15}$/;
+        if (!regexCelular.test(form.celular.trim())) {
+            setError('El celular debe contener entre 8 y 15 dígitos numéricos.');
+            return;
+        }
+
+        // 8. Validación de Contraseña Fuerte (Mínimo 8 caracteres, minúscula, mayúscula, número)
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
         if (!passwordRegex.test(form.password)) {
-            setError('La contraseña debe tener al menos 8 caracteres, una mayúscula y un número por seguridad.');
+            setError('La contraseña debe tener: mínimo 8 caracteres, una mayúscula, una minúscula y un número.');
             return;
         }
 
-        // 4. Validación de Coincidencia de Contraseñas
+        // 9. Validación de Coincidencia de Contraseñas
         if (form.password !== confirmarPassword) {
             setError('Las contraseñas no coinciden. Por favor, verifícalas.');
             return;
@@ -53,8 +115,13 @@ const manejarRegistro = async (e) => {
         
         try {
             const datosAEnviar = {
-                ...form,
-                celular: `${codigoPais}${form.celular}`
+                nombre: form.nombre.trim(),
+                ap_paterno: form.ap_paterno.trim(),
+                ap_materno: form.ap_materno.trim(),
+                fecha_nacimiento: form.fecha_nacimiento,
+                correo: form.correo.trim().toLowerCase(),
+                celular: `${codigoPais}${form.celular.trim()}`,
+                password: form.password
             };
 
             const respuesta = await api.post('/auth/registro', datosAEnviar);
@@ -137,7 +204,7 @@ const manejarRegistro = async (e) => {
                                     type="checkbox" 
                                     checked={aceptaTerminos}
                                     onChange={(e) => setAceptaTerminos(e.target.checked)}
-                                    className="peer h-5 w-5 appearance-none rounded-lg border-2 border-gray-600 bg-black/50 checked:bg-blue-600 checked:border-blue-500 transition-all cursor-pointer"
+                                    className="peer h-5 w-5 appearance-none border-2 border-gray-600 bg-black/50 checked:bg-blue-600 checked:border-blue-500 transition-all cursor-pointer"
                                 />
                                 <svg className="absolute top-1 left-1 w-3 h-3 text-white hidden peer-checked:block pointer-events-none" fill="none" stroke="currentColor" strokeWidth={4} viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
                             </div>

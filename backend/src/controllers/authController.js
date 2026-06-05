@@ -9,11 +9,80 @@ const nodemailer = require('nodemailer');
 // 1. REGISTRAR USUARIO (TRADICIONAL)
 // ==========================================
 exports.registrarUsuario = async (req, res) => {
-    // El backend recibe 'celular' ya con el prefijo (ej: +569...)
-const { nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, password } = req.body;
+    // El backend recibe 'celular' ya con el prefijo
+    const { nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, password } = req.body;
 
-    if (!nombre || !correo || !password) {
-        return res.status(400).json({ error: 'El nombre, correo y contraseña son obligatorios' });
+    // ===== VALIDACIONES =====
+    
+    // 1. Validar campos obligatorios
+    if (!nombre || !ap_paterno || !ap_materno || !fecha_nacimiento || !correo || !celular || !password) {
+        return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+    }
+
+    // 2. Trim de espacios
+    const nombreTrim = nombre.trim();
+    const apPatTrim = ap_paterno.trim();
+    const apMatTrim = ap_materno.trim();
+    const correoTrim = correo.trim().toLowerCase();
+    const celularTrim = celular.trim();
+
+    // 3. Validar que nombre, apellidos solo contengan letras
+    const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]+$/;
+    if (!regexLetras.test(nombreTrim)) {
+        return res.status(400).json({ error: 'El nombre solo debe contener letras' });
+    }
+    if (!regexLetras.test(apPatTrim)) {
+        return res.status(400).json({ error: 'El apellido paterno solo debe contener letras' });
+    }
+    if (!regexLetras.test(apMatTrim)) {
+        return res.status(400).json({ error: 'El apellido materno solo debe contener letras' });
+    }
+
+    // 4. Validar longitud mínima de nombres
+    if (nombreTrim.length < 2) {
+        return res.status(400).json({ error: 'El nombre debe tener al menos 2 caracteres' });
+    }
+    if (apPatTrim.length < 2) {
+        return res.status(400).json({ error: 'El apellido paterno debe tener al menos 2 caracteres' });
+    }
+    if (apMatTrim.length < 2) {
+        return res.status(400).json({ error: 'El apellido materno debe tener al menos 2 caracteres' });
+    }
+
+    // 5. Validar formato de email
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regexEmail.test(correoTrim)) {
+        return res.status(400).json({ error: 'El correo electrónico no es válido' });
+    }
+
+    // 6. Validar formato de celular (solo números sin espacios, entre 8-15 dígitos)
+    const regexCelular = /^\+?\d{8,15}$/;
+    if (!regexCelular.test(celularTrim)) {
+        return res.status(400).json({ error: 'El celular debe contener entre 8 y 15 dígitos' });
+    }
+
+    // 7. Validar fecha de nacimiento
+    const fechaNac = new Date(fecha_nacimiento);
+    const hoy = new Date();
+    const hace18Anos = new Date();
+    hace18Anos.setFullYear(hace18Anos.getFullYear() - 18);
+    
+    if (isNaN(fechaNac.getTime())) {
+        return res.status(400).json({ error: 'La fecha de nacimiento no es válida' });
+    }
+    if (fechaNac > hoy) {
+        return res.status(400).json({ error: 'La fecha de nacimiento no puede ser en el futuro' });
+    }
+    if (fechaNac > hace18Anos) {
+        return res.status(400).json({ error: 'Debes tener al menos 18 años para registrarte' });
+    }
+
+    // 8. Validar fortaleza de contraseña
+    const regexPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!regexPassword.test(password)) {
+        return res.status(400).json({ 
+            error: 'La contraseña debe tener: mínimo 8 caracteres, una mayúscula, una minúscula y un número' 
+        });
     }
 
     try {
@@ -25,17 +94,17 @@ const { nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, passw
             INSERT INTO usuario (
                 nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, password, es_vip, tipo_usuario_id_tipo_usuario
             ) VALUES (
-                :nombre, :ap_paterno, :ap_materno, TO_DATE(:fecha_nacimiento, 'DD/MM/YYYY'), :correo, :celular, :password, 0, :tipo_usuario
+                :nombre, :ap_paterno, :ap_materno, TO_DATE(:fecha_nacimiento, 'YYYY/MM/DD'), :correo, :celular, :password, 0, :tipo_usuario
             ) RETURNING id_usuario INTO :out_id
         `;
 
         const binds = {
-            nombre: nombre,
-            ap_paterno: ap_paterno || null,
-            ap_materno: ap_materno || null,
-            fecha_nacimiento: fecha_nacimiento || null,
-            correo: correo,
-            celular: celular || null,
+            nombre: nombreTrim,
+            ap_paterno: apPatTrim,
+            ap_materno: apMatTrim,
+            fecha_nacimiento: fecha_nacimiento,
+            correo: correoTrim,
+            celular: celularTrim,
             password: passwordHashed,
             tipo_usuario: idTipoUsuario,
             out_id: { type: oracledb.NUMBER, dir: oracledb.BIND_OUT }
@@ -48,16 +117,22 @@ const { nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, passw
             mensaje: '¡Usuario registrado exitosamente en Oracle Cloud!',
             usuario: {
                 id: nuevoIdUsuario,
-                nombre,
-                correo,
+                nombre: nombreTrim,
+                correo: correoTrim,
                 es_vip: false
             },
-            token: jwt.sign({ id: nuevoIdUsuario, correo, rol: idTipoUsuario }, process.env.JWT_SECRET || 'super_secreto_alerta_digital_duoc', { expiresIn: '8h' })
+            token: jwt.sign({ id: nuevoIdUsuario, correo: correoTrim, rol: idTipoUsuario }, process.env.JWT_SECRET || 'super_secreto_alerta_digital_duoc', { expiresIn: '8h' })
         });
 
     } catch (error) {
         console.error('Error en registro:', error);
         if (error.message && error.message.includes('ORA-00001')) {
+            // Identificar si es correo o celular duplicado
+            if (error.message.includes('CORREO')) {
+                return res.status(409).json({ error: 'Este correo electrónico ya está registrado en el sistema.' });
+            } else if (error.message.includes('CELULAR')) {
+                return res.status(409).json({ error: 'Este número de celular ya está registrado en el sistema.' });
+            }
             return res.status(409).json({ error: 'El correo o celular ya están registrados en el sistema.' });
         }
         res.status(500).json({ error: 'Error interno del servidor al registrar.' });

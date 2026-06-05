@@ -1,16 +1,17 @@
 import { useState, useRef } from 'react';
 import api from '../services/api';
+import { StateButton } from './EstadoBotón';
 
 const Analizador = ({ isPremium, setTabActiva }) => {
     const [tipoAnalisis, setTipoAnalisis] = useState('texto');
     const [mensaje, setMensaje] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [estadoBoton, setEstadoBoton] = useState('idle'); // idle | loading | success | error
+    const [estadoBotonImagen, setEstadoBotonImagen] = useState('idle');
     const [resultado, setResultado] = useState(null);
     const [estadoFeedback, setEstadoFeedback] = useState('pendiente');
     const [error, setError] = useState('');
 
     const [imagenPreview, setImagenPreview] = useState(null);
-    const [escaneando, setEscaneando] = useState(false);
     const fileInputRef = useRef(null);
 
     const MAX_CHARS = 1000; // Límite de 1000 caracteres
@@ -32,34 +33,48 @@ const Analizador = ({ isPremium, setTabActiva }) => {
 
     const analizarTextoAPI = async () => {
         if (!mensaje.trim()) return;
-        setLoading(true); setEstadoFeedback('pendiente'); setError('');
+        setEstadoBoton('loading');
+        setError('');
         try {
             const respuesta = await api.post('/mensajes/analizar', { contenido: mensaje });
+            setEstadoBoton('success');
+            setResultado(respuesta.data.reporte);
+
             setTimeout(() => {
-                setResultado(respuesta.data.reporte);
-                setLoading(false);
-            }, 1200);
+                setEstadoBoton('idle');
+            }, 2000);
         } catch (err) {
+            setEstadoBoton('error');
             setError('Error de comunicación con el motor de IA.');
-            setLoading(false);
+
+            setTimeout(() => {
+                setEstadoBoton('idle');
+            }, 5000);
         }
     };
 
     const analizarImagenVIP = async () => {
         if (!imagenPreview) return;
-        setEscaneando(true); setEstadoFeedback('pendiente'); setError('');
+        setEstadoBotonImagen('loading');
+        setError('');
         try {
             const respuesta = await api.post('/mensajes/analizar-imagen', { imagen_base64: imagenPreview });
+            setEstadoBotonImagen('success');
+            setResultado({
+                ...respuesta.data.reporte,
+                texto_leido: respuesta.data.texto_leido_oculto || ''
+            });
+
             setTimeout(() => {
-                setResultado({
-                    ...respuesta.data.reporte,
-                    texto_leido: respuesta.data.texto_leido_oculto || ''
-                });
-                setEscaneando(false);
-            }, 2500);
+                setEstadoBotonImagen('idle');
+            }, 2000);
         } catch (err) {
+            setEstadoBotonImagen('error');
             setError('Fallo en el servicio de IA Visual.');
-            setEscaneando(false);
+
+            setTimeout(() => {
+                setEstadoBotonImagen('idle');
+            }, 5000);
         }
     };
 
@@ -199,21 +214,25 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     return (
         <div className="flex-1 w-full flex flex-col px-5 pt-10 pb-24 font-sans animate-fade-in relative overflow-y-auto no-scrollbar">
 
-            <div className="flex items-center gap-1.5 mb-3 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md w-fit ml-2 shadow-sm">
+            <div className="flex items-center gap-1.5 mb-4 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md w-fit ml-2 shadow-sm shrink-0">
                 <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_blue]"></span>
                 <span className="text-[10px] text-blue-400 font-black uppercase tracking-widest">IA Activa</span>
             </div>
 
-            <div className="mb-6 flex justify-between items-end px-2">
-                <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 leading-tight tracking-tight uppercase">
-                    Escáner <br /><span className="text-blue-500 bg-none italic underline decoration-4 decoration-blue-500 underline-offset-4 font-normal">Digital</span>
+            {/* HEADER CORREGIDO SIN COLISIONES */}
+            <div className="mb-6 flex justify-between items-center px-2 shrink-0">
+                <h2 className="flex flex-col text-4xl font-black tracking-tighter text-white uppercase leading-none select-none">
+                    <span>Escáner</span>
+                    <span className="text-3xl font-extralight tracking-normal normal-case italic bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-400 bg-clip-text text-transparent block mt-1 py-1 pl-0.5">
+                        Digital
+                    </span>
                 </h2>
-                <button onClick={() => setTabActiva('historial')} className="bg-gray-800 border border-gray-700 text-gray-300 p-3.5 rounded-2xl hover:bg-gray-700 transition-all shadow-lg active:scale-95">
+                <button onClick={() => setTabActiva('historial')} className="bg-gray-800 border border-gray-700 text-gray-300 p-3.5 rounded-2xl hover:bg-gray-700 transition-all shadow-lg active:scale-95 self-end">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </button>
             </div>
 
-            <div className="bg-gray-900 p-1.5 rounded-2xl flex mb-6 border border-gray-800 shadow-inner">
+            <div className="bg-gray-900 p-1.5 rounded-2xl flex mb-6 border border-gray-800 shadow-inner shrink-0">
                 <button onClick={() => setTipoAnalisis('texto')} className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-300 ${tipoAnalisis === 'texto' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Texto / Link</button>
                 <button onClick={() => setTipoAnalisis('imagen')} className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all duration-300 ${tipoAnalisis === 'imagen' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Imagen PRO</button>
             </div>
@@ -222,7 +241,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                 <div className="flex-1 flex flex-col min-h-0 animate-fade-in relative px-1">
 
                     {/* SHORTCUTS DE APLICACIONES OFICIALES */}
-                    <div className="flex gap-2 mb-4">
+                    <div className="flex gap-2 mb-4 shrink-0">
                         <button onClick={() => window.open('whatsapp://')} className="flex-1 bg-green-600/10 border border-green-500/20 text-green-500 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
                             <span>WhatsApp</span>
                         </button>
@@ -250,13 +269,21 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                         </div>
                     </div>
 
-                    <div className="text-right mt-3 mb-5 text-[10px] font-black text-gray-600 uppercase tracking-widest flex justify-between px-2">
+                    <div className="text-right mt-3 mb-5 text-[10px] font-black text-gray-600 uppercase tracking-widest flex justify-between px-2 shrink-0">
                         <span>Análisis de cadena profunda</span>
                         <span>{mensaje.length} / {MAX_CHARS}</span>
                     </div>
 
-                    <button onClick={analizarTextoAPI} disabled={loading || !mensaje.trim()} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-2xl mt-auto shadow-2xl active:scale-95 transition-all duration-300 disabled:opacity-40 text-lg tracking-widest uppercase">
-                        {loading ? <span className="flex items-center gap-2 justify-center font-black"><div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div> PROCESANDO...</span> : 'Iniciar Escaneo'}
+                    <button onClick={analizarTextoAPI} className="w-full shrink-0">
+                        <StateButton
+                            state={estadoBoton}
+                            onClick={analizarTextoAPI}
+                            variant="primary"
+                        >
+                            {estadoBoton === 'loading' && 'PROCESANDO...'}
+                            {estadoBoton === 'success' && '¡ANÁLISIS COMPLETADO!'}
+                            {(estadoBoton === 'idle' || estadoBoton === 'error') && '🔍 INICIAR ESCANEO'}
+                        </StateButton>
                     </button>
                 </div>
             ) : (
@@ -283,16 +310,16 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                                     <p className="text-white font-black text-sm uppercase tracking-widest text-center leading-tight">Toque para seleccionar una captura de pantalla</p>
                                 </div>
                             ) : (
-                                <div className="relative rounded-[2rem] overflow-hidden mb-6 flex-1 flex items-center justify-center bg-black border border-gray-700 min-h-[200px] group cursor-pointer shadow-2xl shadow-blue-500/5" onClick={() => !escaneando && fileInputRef.current.click()}>
-                                    <img src={imagenPreview} alt="Preview" className={`max-h-full max-w-full object-contain transition-all duration-500 ${escaneando ? 'opacity-30 blur-sm grayscale' : 'opacity-100 group-hover:opacity-70'}`} />
+                                <div className={`relative rounded-[2rem] overflow-hidden mb-6 flex-1 flex items-center justify-center bg-black border border-gray-700 min-h-[200px] group cursor-pointer shadow-2xl shadow-blue-500/5 transition-all ${estadoBotonImagen === 'loading' ? 'opacity-30' : ''}`} onClick={() => estadoBotonImagen !== 'loading' && fileInputRef.current.click()}>
+                                    <img src={imagenPreview} alt="Preview" className={`max-h-full max-w-full object-contain transition-all duration-500 ${estadoBotonImagen === 'loading' ? 'opacity-30 blur-sm grayscale' : 'opacity-100 group-hover:opacity-70'}`} />
 
-                                    {!escaneando && (
+                                    {estadoBotonImagen === 'idle' && (
                                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                             <p className="text-white font-black bg-black/60 px-5 py-2.5 rounded-full backdrop-blur-md text-[10px] uppercase tracking-widest border border-white/20 shadow-lg">Cambiar Foto</p>
                                         </div>
                                     )}
 
-                                    {escaneando && (
+                                    {estadoBotonImagen === 'loading' && (
                                         <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
                                             <div className="w-14 h-14 border-4 border-yellow-500/30 border-t-yellow-500 rounded-full animate-spin mb-4 shadow-lg shadow-yellow-500/20"></div>
                                             <p className="text-yellow-400 font-black bg-black/80 px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase border border-yellow-500/30 shadow-sm animate-pulse">Analizando Píxeles...</p>
@@ -301,8 +328,16 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                                 </div>
                             )}
 
-                            <button onClick={analizarImagenVIP} disabled={escaneando || !imagenPreview} className={`w-full font-black py-5 rounded-2xl mt-auto transition-all duration-300 text-lg tracking-widest active:scale-95 uppercase ${escaneando || !imagenPreview ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-xl shadow-yellow-500/20'}`}>
-                                {escaneando ? 'Analizando...' : 'Iniciar Análisis Visual'}
+                            <button className="w-full shrink-0">
+                                <StateButton
+                                    state={estadoBotonImagen}
+                                    onClick={analizarImagenVIP}
+                                    variant="primary"
+                                >
+                                    {estadoBotonImagen === 'loading' && 'ANALIZANDO...'}
+                                    {estadoBotonImagen === 'success' && '¡ANÁLISIS COMPLETADO!'}
+                                    {(estadoBotonImagen === 'idle' || estadoBotonImagen === 'error') && '🔍 INICIAR ANÁLISIS VISUAL'}
+                                </StateButton>
                             </button>
                         </div>
                     )}
