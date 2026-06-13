@@ -1,15 +1,23 @@
 import axios from 'axios';
 
+// 🔥 IP de tu PC en la red local
+const IP_PC = '192.168.1.114';
+
+// Forzamos la IP directamente - sin detección compleja que pueda fallar en Android
+const API_URL = `http://${IP_PC}:5000/api`;
+
+console.log('%c[API] URL:', 'background: #3b82f6; color: white; font-weight: bold;', API_URL);
+console.log('%c[API] Platform:', 'background: #3b82f6; color: white; font-weight: bold;', 
+    typeof window !== 'undefined' ? (window.Capacitor ? window.Capacitor.getPlatform() : 'web') : 'unknown');
+
 const api = axios.create({
-    baseURL: 'http://localhost:5000/api', // Desarrollo
-   
+    baseURL: API_URL,
 });
 
 // Interceptor para inyectar el token automáticamente
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
-        // Aseguramos el formato estándar "Bearer token"
         config.headers.Authorization = `Bearer ${token}`;
     }
     return config;

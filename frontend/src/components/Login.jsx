@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import api from '../services/api';
 
@@ -9,6 +9,9 @@ const Login = ({ onLoginSuccess, irARegistro }) => {
     const [mostrarPass, setMostrarPass] = useState(false);
     const [error, setError] = useState('');
     const [cargando, setCargando] = useState(false);
+
+    // Estado para ver qué URL usa la app
+    const [apiUrl] = useState(api.defaults.baseURL);
 
     // NUEVOS: Estados para recuperar contraseña
     const [vistaRecuperar, setVistaRecuperar] = useState(false);
@@ -22,7 +25,13 @@ const Login = ({ onLoginSuccess, irARegistro }) => {
             const respuesta = await api.post('/auth/login', { correo, password });
             completarAuth(respuesta.data);
         } catch (err) {
-            setError(err.response?.data?.error || 'Correo o contraseña incorrectos.');
+            console.log('[LOGIN ERROR]', err);
+            console.log('[LOGIN RESPONSE]', err.response?.status, err.response?.data);
+            // Mostramos el error exacto que devuelve el backend
+            const msgError = err.response?.data?.error 
+                || (err.response ? `Error ${err.response.status}` : 'No se pudo conectar al servidor')
+                || 'Error desconocido';
+            setError(msgError);
         } finally { 
             setCargando(false); 
         }
@@ -91,6 +100,11 @@ const Login = ({ onLoginSuccess, irARegistro }) => {
                     </p>
                 </div>
                 
+                {/* 🔥 MOSTRAMOS LA URL QUE USA LA APP */}
+                <div className="bg-gray-800/50 border border-gray-700 text-gray-400 px-3 py-2 rounded-xl mb-4 text-[10px] font-mono text-center">
+                    Conectando a: <span className="text-blue-400 font-bold">{apiUrl}</span>
+                </div>
+
                 {error && (
                     <div className="bg-red-500/10 border-l-4 border-red-500 text-red-400 px-4 py-3 rounded-xl mb-6 text-xs font-bold animate-fade-in flex items-center gap-2">
                         <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>

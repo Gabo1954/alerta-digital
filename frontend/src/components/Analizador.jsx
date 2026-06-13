@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 import { StateButton } from './EstadoBotón';
 
@@ -15,6 +15,54 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     const fileInputRef = useRef(null);
 
     const MAX_CHARS = 1000; // Límite de 1000 caracteres
+
+    // --- COMPONENTE BANNER ADMOB ---
+    const BannerAd = () => {
+        useEffect(() => {
+            let canceled = false;
+            const tryInit = async () => {
+                try {
+                    const CapacitorMod = await import('@capacitor/core');
+                    const { Capacitor } = CapacitorMod;
+                    if (Capacitor.getPlatform() !== 'android') return;
+                    if (canceled) return;
+                    const AdMobMod = await import('@capacitor-community/admob');
+                    const { AdMob } = AdMobMod;
+                    if (canceled) return;
+                    await AdMob.initialize();
+                    if (canceled) return;
+                    await AdMob.showBanner({
+                        adId: 'ca-app-pub-2346960430457533/1715534780',
+                        adSize: 'BANNER',
+                        position: 'bottom',
+                        margin: 70,
+                        isTesting: true,
+                    });
+                } catch (_e) {}
+            };
+            tryInit();
+            return () => { canceled = true; };
+        }, []);
+        return null;
+    };
+
+    const [mostrandoAd, setMostrandoAd] = useState(false);
+
+    // --- ANUNCIO INTERSTICIAL ---
+    // Efecto: cuando aparece un resultado, mostrar interstitial si no es premium
+    useEffect(() => {
+        if (resultado && !isPremium) {
+            setMostrandoAd(true);
+            const timer = setTimeout(() => setMostrandoAd(false), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [resultado, isPremium]);
+
+    // BOTÓN DE PRUEBA MANUAL - mostrar overlay al hacer clic
+    const probarOverlay = () => {
+        setMostrandoAd(true);
+        setTimeout(() => setMostrandoAd(false), 5000);
+    };
 
     // --- FUNCIONES DE INTERACCIÓN ---
     const importarDesdePortapapeles = async () => {
@@ -132,6 +180,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         const razonesEvidencia = generarRazonesEvidencia(esPeligroso);
 
         return (
+            <>
             <div className="flex-1 w-full overflow-y-auto no-scrollbar px-5 pt-6 pb-32 animate-fade-in-up font-sans">
 
                 <button onClick={() => { setResultado(null); setImagenPreview(null); setMensaje(''); setEstadoFeedback('pendiente'); }} className="flex items-center text-gray-400 font-bold mb-8 hover:text-white transition-all bg-gray-800/50 px-5 py-2.5 rounded-xl border border-white/5 active:scale-95 shadow-lg">
@@ -205,13 +254,46 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                     </div>
                 )}
             </div>
+            {mostrandoAd && (
+                <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center animate-fade-in">
+                    <div className="bg-gray-900 border border-white/10 rounded-[2.5rem] p-10 max-w-sm mx-6 text-center shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-blue-500/10 blur-3xl rounded-full"></div>
+                        <div className="w-20 h-20 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-5 border border-blue-500/20 relative z-10">
+                            <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001z"/></svg>
+                        </div>
+                        <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tight relative z-10">Alerta Digital</h3>
+                        <div className="w-16 h-1 bg-blue-500 rounded-full mx-auto mb-5"></div>
+                        <p className="text-gray-400 text-sm mb-6 leading-relaxed relative z-10 font-medium">Manteniendo tu seguridad en línea</p>
+                        <div className="w-10 h-10 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto relative z-10"></div>
+                        <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] mt-4 relative z-10 animate-pulse">Anuncio</p>
+                    </div>
+                </div>
+            )}
+            </>
         );
     }
+
+    const overlayInterstitial = mostrandoAd && (
+        <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center animate-fade-in">
+            <div className="bg-gray-900 border border-white/10 rounded-[2.5rem] p-10 max-w-sm mx-6 text-center shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-blue-500/10 blur-3xl rounded-full"></div>
+                <div className="w-20 h-20 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-5 border border-blue-500/20 relative z-10">
+                    <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001z"/></svg>
+                </div>
+                <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tight relative z-10">Alerta Digital</h3>
+                <div className="w-16 h-1 bg-blue-500 rounded-full mx-auto mb-5"></div>
+                <p className="text-gray-400 text-sm mb-6 leading-relaxed relative z-10 font-medium">Manteniendo tu seguridad en línea</p>
+                <div className="w-10 h-10 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto relative z-10"></div>
+                <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] mt-4 relative z-10 animate-pulse">Anuncio</p>
+            </div>
+        </div>
+    );
 
     // ==========================================
     // RENDER 2: VISTA PRINCIPAL (INGRESO)
     // ==========================================
     return (
+        <>
         <div className="flex-1 w-full flex flex-col px-5 pt-10 pb-24 font-sans animate-fade-in relative overflow-y-auto no-scrollbar">
 
             <div className="flex items-center gap-1.5 mb-4 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md w-fit ml-2 shadow-sm shrink-0">
@@ -285,6 +367,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                             {(estadoBoton === 'idle' || estadoBoton === 'error') && '🔍 INICIAR ESCANEO'}
                         </StateButton>
                     </button>
+                    {!isPremium && <BannerAd />}
                 </div>
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center min-h-[300px] animate-fade-in px-2">
@@ -344,6 +427,8 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                 </div>
             )}
         </div>
+        {overlayInterstitial}
+        </>
     );
 };
 

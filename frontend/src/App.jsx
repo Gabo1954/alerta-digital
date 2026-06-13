@@ -8,7 +8,7 @@ import Educacion from './components/Educacion';
 import Suscripcion from './components/Suscripcion';
 import PagoResultado from './components/PagoResultado';
 import Perfil from './components/Perfil';
-import RestablecerPassword from './components/RestablecerPassword'; 
+import RestablecerPassword from './components/RestablecerPassword';
 
 function App() {
   const [usuario, setUsuario] = useState(null);
