@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import api from '../services/api';
 
-const Suscripcion = ({ isPremium, setTabActiva }) => {
+const Suscripcion = ({ isPremium }) => {
     const [cargando, setCargando] = useState(false);
 
     const iniciarPagoWebpay = async () => {

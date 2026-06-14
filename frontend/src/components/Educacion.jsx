@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const Educacion = ({ usuario, isPremium, setTabActiva }) => {
+const Educacion = ({ usuario }) => {
     const [expandido, setExpandido] = useState(null);
     const [leidos, setLeidos] = useState([]);
     const [isSpeaking, setIsSpeaking] = useState(false);

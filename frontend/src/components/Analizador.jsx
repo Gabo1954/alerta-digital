@@ -2,6 +2,41 @@ import { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 import { StateButton } from './EstadoBotón';
 
+// --- COMPONENTE BANNER ADMOB (Fuera para evitar re-renderizados infinitos) ---
+const BannerAd = () => {
+    useEffect(() => {
+        let canceled = false;
+        const tryInit = async () => {
+            try {
+                const { Capacitor } = await import('@capacitor/core');
+                if (Capacitor.getPlatform() === 'web') return;
+                
+                const { AdMob } = await import('@capacitor-community/admob');
+                // Inicialización silenciosa
+                await AdMob.initialize();
+                
+                if (!canceled) {
+                    await AdMob.showBanner({
+                        adId: 'ca-app-pub-2346960430457533/1715534780',
+                        adSize: 'BANNER',
+                        position: 'BOTTOM_CENTER',
+                        margin: 100, // Ajustado para que aparezca arriba de la barra de navegación (pb-24 ≈ 96px)
+                        isTesting: true, // Mantener true para ver anuncios de prueba
+                    });
+                }
+            } catch (e) {
+                console.warn('AdMob Banner error:', e);
+            }
+        };
+        tryInit();
+        return () => { 
+            canceled = true; 
+            import('@capacitor-community/admob').then(({ AdMob }) => AdMob.removeBanner()).catch(() => {});
+        };
+    }, []);
+    return <div className="h-20 w-full shrink-0" />; // Espacio reservado para el banner nativo
+};
+
 const Analizador = ({ isPremium, setTabActiva }) => {
     const [tipoAnalisis, setTipoAnalisis] = useState('texto');
     const [mensaje, setMensaje] = useState('');
@@ -10,59 +45,34 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     const [resultado, setResultado] = useState(null);
     const [estadoFeedback, setEstadoFeedback] = useState('pendiente');
     const [error, setError] = useState('');
-
     const [imagenPreview, setImagenPreview] = useState(null);
     const fileInputRef = useRef(null);
 
     const MAX_CHARS = 1000; // Límite de 1000 caracteres
 
-    // --- COMPONENTE BANNER ADMOB ---
-    const BannerAd = () => {
-        useEffect(() => {
-            let canceled = false;
-            const tryInit = async () => {
-                try {
-                    const CapacitorMod = await import('@capacitor/core');
-                    const { Capacitor } = CapacitorMod;
-                    if (Capacitor.getPlatform() !== 'android') return;
-                    if (canceled) return;
-                    const AdMobMod = await import('@capacitor-community/admob');
-                    const { AdMob } = AdMobMod;
-                    if (canceled) return;
-                    await AdMob.initialize();
-                    if (canceled) return;
-                    await AdMob.showBanner({
-                        adId: 'ca-app-pub-2346960430457533/1715534780',
-                        adSize: 'BANNER',
-                        position: 'bottom',
-                        margin: 70,
-                        isTesting: true,
-                    });
-                } catch (_e) {}
-            };
-            tryInit();
-            return () => { canceled = true; };
-        }, []);
-        return null;
+    // --- ADMOB INTERSTICIAL REAL ---
+    const mostrarInterstitialAd = async () => {
+        try {
+            const { AdMob } = await import('@capacitor-community/admob');
+            const { Capacitor } = await import('@capacitor/core');
+            
+            if (Capacitor.getPlatform() === 'web') return;
+
+            await AdMob.prepareInterstitial({
+                adId: 'ca-app-pub-2346960430457533/8003752715',
+                isTesting: true, // Cambiar a false para producción
+            });
+            await AdMob.showInterstitial();
+        } catch (e) {
+            console.warn('AdMob Interstitial falló o se canceló:', e);
+        }
     };
 
-    const [mostrandoAd, setMostrandoAd] = useState(false);
-
-    // --- ANUNCIO INTERSTICIAL ---
-    // Efecto: cuando aparece un resultado, mostrar interstitial si no es premium
     useEffect(() => {
         if (resultado && !isPremium) {
-            setMostrandoAd(true);
-            const timer = setTimeout(() => setMostrandoAd(false), 5000);
-            return () => clearTimeout(timer);
+            mostrarInterstitialAd();
         }
     }, [resultado, isPremium]);
-
-    // BOTÓN DE PRUEBA MANUAL - mostrar overlay al hacer clic
-    const probarOverlay = () => {
-        setMostrandoAd(true);
-        setTimeout(() => setMostrandoAd(false), 5000);
-    };
 
     // --- FUNCIONES DE INTERACCIÓN ---
     const importarDesdePortapapeles = async () => {
@@ -254,40 +264,9 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                     </div>
                 )}
             </div>
-            {mostrandoAd && (
-                <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center animate-fade-in">
-                    <div className="bg-gray-900 border border-white/10 rounded-[2.5rem] p-10 max-w-sm mx-6 text-center shadow-2xl relative overflow-hidden">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-blue-500/10 blur-3xl rounded-full"></div>
-                        <div className="w-20 h-20 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-5 border border-blue-500/20 relative z-10">
-                            <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001z"/></svg>
-                        </div>
-                        <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tight relative z-10">Alerta Digital</h3>
-                        <div className="w-16 h-1 bg-blue-500 rounded-full mx-auto mb-5"></div>
-                        <p className="text-gray-400 text-sm mb-6 leading-relaxed relative z-10 font-medium">Manteniendo tu seguridad en línea</p>
-                        <div className="w-10 h-10 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto relative z-10"></div>
-                        <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] mt-4 relative z-10 animate-pulse">Anuncio</p>
-                    </div>
-                </div>
-            )}
             </>
         );
     }
-
-    const overlayInterstitial = mostrandoAd && (
-        <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center animate-fade-in">
-            <div className="bg-gray-900 border border-white/10 rounded-[2.5rem] p-10 max-w-sm mx-6 text-center shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-blue-500/10 blur-3xl rounded-full"></div>
-                <div className="w-20 h-20 bg-blue-500/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-5 border border-blue-500/20 relative z-10">
-                    <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20"><path d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001z"/></svg>
-                </div>
-                <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tight relative z-10">Alerta Digital</h3>
-                <div className="w-16 h-1 bg-blue-500 rounded-full mx-auto mb-5"></div>
-                <p className="text-gray-400 text-sm mb-6 leading-relaxed relative z-10 font-medium">Manteniendo tu seguridad en línea</p>
-                <div className="w-10 h-10 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto relative z-10"></div>
-                <p className="text-blue-400 text-[10px] font-black uppercase tracking-[0.3em] mt-4 relative z-10 animate-pulse">Anuncio</p>
-            </div>
-        </div>
-    );
 
     // ==========================================
     // RENDER 2: VISTA PRINCIPAL (INGRESO)
@@ -321,7 +300,9 @@ const Analizador = ({ isPremium, setTabActiva }) => {
 
             {tipoAnalisis === 'texto' ? (
                 <div className="flex-1 flex flex-col min-h-0 animate-fade-in relative px-1">
-
+                    {/* ... (contenido omitido para brevedad) ... */}
+                    <div className="relative flex-1 flex flex-col group min-h-[220px]">
+                        <textarea
                     {/* SHORTCUTS DE APLICACIONES OFICIALES */}
                     <div className="flex gap-2 mb-4 shrink-0">
                         <button onClick={() => window.open('whatsapp://')} className="flex-1 bg-green-600/10 border border-green-500/20 text-green-500 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
@@ -372,14 +353,17 @@ const Analizador = ({ isPremium, setTabActiva }) => {
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center min-h-[300px] animate-fade-in px-2">
                     {!isPremium ? (
-                        <div className="text-center p-8 bg-gray-900 rounded-[2.5rem] border border-yellow-500/20 w-full shadow-lg relative overflow-hidden">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-500/10 blur-3xl rounded-full"></div>
-                            <div className="w-16 h-16 bg-yellow-500/10 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-5 border border-yellow-500/20 relative z-10 shadow-inner">
-                                <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" /></svg>
+                        <div className="w-full flex flex-col items-center">
+                            <div className="text-center p-8 bg-gray-900 rounded-[2.5rem] border border-yellow-500/20 w-full shadow-lg relative overflow-hidden mb-6">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-500/10 blur-3xl rounded-full"></div>
+                                <div className="w-16 h-16 bg-yellow-500/10 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-5 border border-yellow-500/20 relative z-10 shadow-inner">
+                                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" /></svg>
+                                </div>
+                                <h3 className="text-xl font-black text-white mb-2 uppercase relative z-10 tracking-tight">Análisis Visual VIP</h3>
+                                <p className="text-gray-400 text-sm mb-8 px-2 relative z-10 leading-relaxed font-medium">Extrae enlaces y detecta suplantación directamente desde capturas de pantalla.</p>
+                                <button onClick={() => setTabActiva('pro')} className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-black py-4.5 rounded-xl transition-all shadow-xl active:scale-95 relative z-10 tracking-widest uppercase">Mejorar a VIP</button>
                             </div>
-                            <h3 className="text-xl font-black text-white mb-2 uppercase relative z-10 tracking-tight">Análisis Visual VIP</h3>
-                            <p className="text-gray-400 text-sm mb-8 px-2 relative z-10 leading-relaxed font-medium">Extrae enlaces y detecta suplantación directamente desde capturas de pantalla.</p>
-                            <button onClick={() => setTabActiva('pro')} className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-black py-4.5 rounded-xl transition-all shadow-xl active:scale-95 relative z-10 tracking-widest uppercase">Mejorar a VIP</button>
+                            <BannerAd />
                         </div>
                     ) : (
                         <div className="w-full flex flex-col h-full">
@@ -427,7 +411,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                 </div>
             )}
         </div>
-        {overlayInterstitial}
         </>
     );
 };
