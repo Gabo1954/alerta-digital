@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Registro from './components/Registro';
 import Analizador from './components/Analizador';
@@ -9,47 +9,6 @@ import Suscripcion from './components/Suscripcion';
 import PagoResultado from './components/PagoResultado';
 import Perfil from './components/Perfil';
 import RestablecerPassword from './components/RestablecerPassword';
-
-const BannerAd = () => {
-  const bannerShown = useRef(false);
-
-  useEffect(() => {
-    let canceled = false;
-    const tryInit = async () => {
-      try {
-        const { Capacitor } = await import('@capacitor/core');
-        if (Capacitor.getPlatform() === 'web') return;
-
-        const { AdMob } = await import('@capacitor-community/admob');
-        await AdMob.initialize();
-
-        if (!canceled && !bannerShown.current) {
-          bannerShown.current = true;
-          await AdMob.showBanner({
-            adId: 'ca-app-pub-2346960430457533/1715534780',
-            adSize: 'ADAPTIVE_BANNER',
-            position: 'BOTTOM_CENTER',
-            margin: 56,
-            isTesting: true,
-          });
-        }
-      } catch (e) {
-        console.warn('AdMob Banner error:', e);
-        bannerShown.current = false;
-      }
-    };
-    tryInit();
-    return () => {
-      canceled = true;
-      bannerShown.current = false;
-      import('@capacitor-community/admob')
-        .then(({ AdMob }) => AdMob.removeBanner())
-        .catch(() => {});
-    };
-  }, []);
-
-  return null;
-};
 
 function App() {
   const [usuario, setUsuario] = useState(null);
@@ -137,8 +96,6 @@ function App() {
             </div>
           </div>
         </header>
-
-        {!isPremium && <BannerAd />}
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-28 pt-2 relative scroll-smooth bg-gray-950">
           {isPremium && <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-yellow-500/5 blur-[120px] pointer-events-none"></div>}

@@ -13,6 +13,12 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     const [error, setError] = useState('');
     const [imagenPreview, setImagenPreview] = useState(null);
     const fileInputRef = useRef(null);
+    
+    // Estado para el escaneo VIP gratuito (Recompensado)
+    const [escaneoGratisDisponible, setEscaneoGratisDisponible] = useState(() => {
+        return localStorage.getItem('escaneo_vip_regalo_usado') !== 'true';
+    });
+    const [recompensaObtenida, setRecompensaObtenida] = useState(false);
 
     const MAX_CHARS = 1000; // Límite de 1000 caracteres
 
@@ -24,15 +30,56 @@ const Analizador = ({ isPremium, setTabActiva }) => {
             
             if (Capacitor.getPlatform() === 'web') return;
 
+            await AdMob.initialize();
             await AdMob.prepareInterstitial({
-                adId: 'ca-app-pub-2346960430457533/8003752715',
-                isTesting: true, // Cambiar a false para producción
+                adId: 'ca-app-pub-3940256099942544/1033173712', // ID de prueba genérico para mayor estabilidad en desarrollo
+                isTesting: true,
             });
             await AdMob.showInterstitial();
         } catch (e) {
             console.warn('AdMob Interstitial falló o se canceló:', e);
         }
     };
+
+    // --- ADMOB REWARDED INTERSTITIAL ---
+    const mostrarRewardedAd = async () => {
+        try {
+            const { AdMob } = await import('@capacitor-community/admob');
+            const { Capacitor } = await import('@capacitor/core');
+            
+            if (Capacitor.getPlatform() === 'web') {
+                // Simulación en web para desarrollo
+                setRecompensaObtenida(true);
+                return;
+            }
+
+            await AdMob.initialize();
+            await AdMob.prepareRewardInterstitialAd({
+                adId: 'ca-app-pub-3940256099942544/5354046379', // ID de prueba para Rewarded Interstitial
+                isTesting: true,
+            });
+
+            const reward = await AdMob.showRewardInterstitialAd();
+            if (reward) {
+                setRecompensaObtenida(true);
+            }
+        } catch (e) {
+            console.warn('AdMob Rewarded falló:', e);
+        }
+    };
+
+    useEffect(() => {
+        const iniciarAdMob = async () => {
+            try {
+                const { AdMob } = await import('@capacitor-community/admob');
+                const { Capacitor } = await import('@capacitor/core');
+                if (Capacitor.getPlatform() !== 'web') {
+                    await AdMob.initialize();
+                }
+            } catch (e) { console.warn('Error inicializando AdMob:', e); }
+        };
+        iniciarAdMob();
+    }, []);
 
     useEffect(() => {
         if (resultado && !isPremium) {
@@ -88,6 +135,13 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                 ...respuesta.data.reporte,
                 texto_leido: respuesta.data.texto_leido_oculto || ''
             });
+
+            // Si usó su escaneo de regalo, lo marcamos como usado para siempre
+            if (!isPremium && recompensaObtenida) {
+                localStorage.setItem('escaneo_vip_regalo_usado', 'true');
+                setEscaneoGratisDisponible(false);
+                setRecompensaObtenida(false);
+            }
 
             setTimeout(() => {
                 setEstadoBotonImagen('idle');
@@ -314,7 +368,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                 </div>
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center min-h-[300px] animate-fade-in px-2">
-                    {!isPremium ? (
+                    {(!isPremium && !recompensaObtenida) ? (
                         <div className="w-full flex flex-col items-center">
                             <div className="text-center p-8 bg-gray-900 rounded-[2.5rem] border border-yellow-500/20 w-full shadow-lg relative overflow-hidden mb-6">
                                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-yellow-500/10 blur-3xl rounded-full"></div>
@@ -323,6 +377,19 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                                 </div>
                                 <h3 className="text-xl font-black text-white mb-2 uppercase relative z-10 tracking-tight">Análisis Visual VIP</h3>
                                 <p className="text-gray-400 text-sm mb-8 px-2 relative z-10 leading-relaxed font-medium">Extrae enlaces y detecta suplantación directamente desde capturas de pantalla.</p>
+                                
+                                {escaneoGratisDisponible ? (
+                                    <button 
+                                        onClick={mostrarRewardedAd}
+                                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4.5 rounded-xl transition-all shadow-xl active:scale-95 relative z-10 tracking-widest uppercase mb-3 text-xs flex items-center justify-center gap-2"
+                                    >
+                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" /></svg>
+                                        Prueba Gratis (Ver Video)
+                                    </button>
+                                ) : (
+                                    <p className="bg-white/5 text-gray-500 text-[10px] font-black py-3 px-4 rounded-xl uppercase tracking-widest mb-4">Prueba gratuita ya utilizada</p>
+                                )}
+
                                 <button onClick={() => setTabActiva('pro')} className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-black py-4.5 rounded-xl transition-all shadow-xl active:scale-95 relative z-10 tracking-widest uppercase">Mejorar a VIP</button>
                             </div>
 
