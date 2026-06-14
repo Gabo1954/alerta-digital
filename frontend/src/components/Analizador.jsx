@@ -2,40 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 import { StateButton } from './EstadoBotón';
 
-// --- COMPONENTE BANNER ADMOB (Fuera para evitar re-renderizados infinitos) ---
-const BannerAd = () => {
-    useEffect(() => {
-        let canceled = false;
-        const tryInit = async () => {
-            try {
-                const { Capacitor } = await import('@capacitor/core');
-                if (Capacitor.getPlatform() === 'web') return;
-                
-                const { AdMob } = await import('@capacitor-community/admob');
-                // Inicialización silenciosa
-                await AdMob.initialize();
-                
-                if (!canceled) {
-                    await AdMob.showBanner({
-                        adId: 'ca-app-pub-2346960430457533/1715534780',
-                        adSize: 'BANNER',
-                        position: 'BOTTOM_CENTER',
-                        margin: 100, // Ajustado para que aparezca arriba de la barra de navegación (pb-24 ≈ 96px)
-                        isTesting: true, // Mantener true para ver anuncios de prueba
-                    });
-                }
-            } catch (e) {
-                console.warn('AdMob Banner error:', e);
-            }
-        };
-        tryInit();
-        return () => { 
-            canceled = true; 
-            import('@capacitor-community/admob').then(({ AdMob }) => AdMob.removeBanner()).catch(() => {});
-        };
-    }, []);
-    return <div className="h-20 w-full shrink-0" />; // Espacio reservado para el banner nativo
-};
 
 const Analizador = ({ isPremium, setTabActiva }) => {
     const [tipoAnalisis, setTipoAnalisis] = useState('texto');
@@ -300,9 +266,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
 
             {tipoAnalisis === 'texto' ? (
                 <div className="flex-1 flex flex-col min-h-0 animate-fade-in relative px-1">
-                    {/* ... (contenido omitido para brevedad) ... */}
-                    <div className="relative flex-1 flex flex-col group min-h-[220px]">
-                        <textarea
                     {/* SHORTCUTS DE APLICACIONES OFICIALES */}
                     <div className="flex gap-2 mb-4 shrink-0">
                         <button onClick={() => window.open('whatsapp://')} className="flex-1 bg-green-600/10 border border-green-500/20 text-green-500 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
@@ -348,7 +311,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                             {(estadoBoton === 'idle' || estadoBoton === 'error') && '🔍 INICIAR ESCANEO'}
                         </StateButton>
                     </button>
-                    {!isPremium && <BannerAd />}
                 </div>
             ) : (
                 <div className="flex-1 flex flex-col items-center justify-center min-h-[300px] animate-fade-in px-2">
@@ -363,7 +325,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                                 <p className="text-gray-400 text-sm mb-8 px-2 relative z-10 leading-relaxed font-medium">Extrae enlaces y detecta suplantación directamente desde capturas de pantalla.</p>
                                 <button onClick={() => setTabActiva('pro')} className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-black py-4.5 rounded-xl transition-all shadow-xl active:scale-95 relative z-10 tracking-widest uppercase">Mejorar a VIP</button>
                             </div>
-                            <BannerAd />
+
                         </div>
                     ) : (
                         <div className="w-full flex flex-col h-full">

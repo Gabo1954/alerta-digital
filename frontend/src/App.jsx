@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Login from './components/Login';
 import Registro from './components/Registro';
 import Analizador from './components/Analizador';
@@ -9,6 +9,47 @@ import Suscripcion from './components/Suscripcion';
 import PagoResultado from './components/PagoResultado';
 import Perfil from './components/Perfil';
 import RestablecerPassword from './components/RestablecerPassword';
+
+const BannerAd = () => {
+  const bannerShown = useRef(false);
+
+  useEffect(() => {
+    let canceled = false;
+    const tryInit = async () => {
+      try {
+        const { Capacitor } = await import('@capacitor/core');
+        if (Capacitor.getPlatform() === 'web') return;
+
+        const { AdMob } = await import('@capacitor-community/admob');
+        await AdMob.initialize();
+
+        if (!canceled && !bannerShown.current) {
+          bannerShown.current = true;
+          await AdMob.showBanner({
+            adId: 'ca-app-pub-2346960430457533/1715534780',
+            adSize: 'ADAPTIVE_BANNER',
+            position: 'BOTTOM_CENTER',
+            margin: 56,
+            isTesting: true,
+          });
+        }
+      } catch (e) {
+        console.warn('AdMob Banner error:', e);
+        bannerShown.current = false;
+      }
+    };
+    tryInit();
+    return () => {
+      canceled = true;
+      bannerShown.current = false;
+      import('@capacitor-community/admob')
+        .then(({ AdMob }) => AdMob.removeBanner())
+        .catch(() => {});
+    };
+  }, []);
+
+  return null;
+};
 
 function App() {
   const [usuario, setUsuario] = useState(null);
@@ -97,6 +138,8 @@ function App() {
           </div>
         </header>
 
+        {!isPremium && <BannerAd />}
+
         <main className="flex-1 overflow-y-auto no-scrollbar pb-28 pt-2 relative scroll-smooth bg-gray-950">
           {isPremium && <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-yellow-500/5 blur-[120px] pointer-events-none"></div>}
           {tabActiva === 'inicio' && <Analizador isPremium={isPremium} setTabActiva={setTabActiva} />}
@@ -107,7 +150,7 @@ function App() {
           {tabActiva === 'perfil' && <Perfil usuario={usuario} isPremium={isPremium} setTabActiva={setTabActiva} onLogout={salir} />}
         </main>
 
-        <nav className="bg-gray-950/95 backdrop-blur-2xl border-t border-white/5 absolute bottom-0 w-full flex justify-around px-2 pt-3 pb-safe z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+        <nav className="bg-gray-950/95 backdrop-blur-2xl border-t border-white/5 absolute bottom-0 w-full flex justify-around px-2 pt-2 pb-safe z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
           <NavBtn id="inicio" label="Escáner" icon="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" active={tabActiva} set={setTabActiva} />
           <NavBtn id="aprender" label="Aprender" icon="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" active={tabActiva} set={setTabActiva} />
           <NavBtn id="ayuda" label="S.O.S" icon="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" active={tabActiva} set={setTabActiva} />
