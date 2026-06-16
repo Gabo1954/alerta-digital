@@ -53,7 +53,7 @@ const Historial = ({ setTabActiva }) => {
         const razones = generarRazonesContextuales(mensajeDetalle.texto, esPeligroso);
 
         return (
-            <div className="flex-1 w-full px-5 pt-8 pb-32 animate-fade-in-up overflow-y-auto no-scrollbar bg-gray-950 font-sans">
+            <div className="w-full px-5 pt-8 pb-32 animate-fade-in-up bg-gray-950 font-sans shrink-0">
                 <button onClick={() => setMensajeDetalle(null)} className="flex items-center text-gray-400 font-bold mb-8 hover:text-white transition-all bg-gray-800/80 px-4 py-2 rounded-xl border border-white/5 active:scale-95 shadow-md">
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg> Volver a la lista
                 </button>
@@ -106,7 +106,7 @@ const Historial = ({ setTabActiva }) => {
     });
 
     return (
-        <div className="flex-1 w-full h-full flex flex-col bg-gray-950 font-sans animate-fade-in relative overflow-hidden">
+        <div className="w-full bg-gray-950 font-sans animate-fade-in shrink-0">
             
             {/* HEADER STICKY (Fijo en la parte superior) */}
             <div className="shrink-0 px-4 sm:px-6 pt-10 pb-4 bg-gray-950/90 backdrop-blur-xl border-b border-white/5 z-20 shadow-md">
@@ -170,8 +170,8 @@ const Historial = ({ setTabActiva }) => {
                 </div>
             </div>
 
-            {/* CONTENEDOR DE LISTA CON SCROLL */}
-            <div className="flex-1 overflow-y-auto no-scrollbar px-4 sm:px-6 pt-4 pb-32">
+            {/* CONTENEDOR DE LISTA */}
+            <div className="px-4 sm:px-6 pt-4 pb-32">
                 {cargando ? (
                     <div className="space-y-4 mt-2">
                         {[1, 2, 3, 4].map(i => (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import Login from './components/Login';
 import Registro from './components/Registro';
 import Analizador from './components/Analizador';
@@ -25,7 +25,6 @@ function App() {
         const userParsed = JSON.parse(guardado);
         setUsuario(userParsed);
         
-        // DOBLE VERIFICACIÓN: Si la BD envió que es VIP, lo validamos aquí
         if (userParsed.es_vip === true || userParsed.ES_VIP === true) {
             setIsPremium(true);
             localStorage.setItem('isPro', 'true');
@@ -34,12 +33,10 @@ function App() {
     if (proStatus === 'true') setIsPremium(true);
   }, []);
 
-  // --- SOLUCIÓN: MANEJADOR CENTRAL PARA MUTACIÓN INMEDIATA ---
   const manejarAuthSuccess = (userData) => {
       setUsuario(userData);
-      // Validamos si es VIP desde la base de datos (Soporta formato Oracle o MariaDB)
       setIsPremium(userData.es_vip === true || userData.ES_VIP === true);
-      setVistaAuth('login'); // Reset de vista por seguridad
+      setVistaAuth('login');
   };
 
   const salir = () => {
@@ -68,10 +65,9 @@ function App() {
     <div className="h-dvh w-full bg-black flex justify-center selection:bg-blue-500 selection:text-white">
       <div className="w-full max-w-md bg-gray-950 h-full relative flex flex-col overflow-hidden shadow-2xl">
 
-        {/* HEADER NATIVO PROFESIONAL */}
+        {/* HEADER */}
         <header className="pt-safe bg-gray-950/90 backdrop-blur-2xl border-b border-white/5 z-50 shrink-0 w-full">
           <div className="px-5 pt-3 pb-4 flex justify-between items-center w-full">
-
             <button onClick={() => setTabActiva('inicio')} className="flex items-center gap-3 text-left transition-all hover:opacity-80 active:scale-95 outline-none">
               <div className={`w-9 h-9 rounded-[10px] flex items-center justify-center ${isPremium ? 'bg-linear-to-tr from-yellow-400 to-yellow-600 animate-pulse' : 'bg-linear-to-tr from-blue-500 to-blue-700'} shadow-lg shrink-0`}>
                 <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -99,12 +95,15 @@ function App() {
 
         <main className="flex-1 overflow-y-auto no-scrollbar pb-28 pt-2 relative scroll-smooth bg-gray-950">
           {isPremium && <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-yellow-500/5 blur-[120px] pointer-events-none"></div>}
-          {tabActiva === 'inicio' && <Analizador isPremium={isPremium} setTabActiva={setTabActiva} />}
-          {tabActiva === 'historial' && <Historial setTabActiva={setTabActiva} />}
-          {tabActiva === 'aprender' && <Educacion usuario={usuario} isPremium={isPremium} setTabActiva={setTabActiva} />}
-          {tabActiva === 'ayuda' && <Contactos />}
-          {tabActiva === 'pro' && <Suscripcion isPremium={isPremium} setIsPremium={setIsPremium} setTabActiva={setTabActiva} />}
-          {tabActiva === 'perfil' && <Perfil usuario={usuario} isPremium={isPremium} setTabActiva={setTabActiva} onLogout={salir} />}
+          
+          {/* TODOS los tabs siempre montados, solo ocultos con CSS */}
+          {/* Esto EVITA el freeze porque React NO desmonta/monta componentes */}
+          <div className={tabActiva === 'inicio' ? 'block' : 'hidden'}><Analizador isPremium={isPremium} setTabActiva={setTabActiva} /></div>
+          <div className={tabActiva === 'historial' ? 'block' : 'hidden'}><Historial setTabActiva={setTabActiva} /></div>
+          <div className={tabActiva === 'aprender' ? 'block' : 'hidden'}><Educacion usuario={usuario} isPremium={isPremium} setTabActiva={setTabActiva} /></div>
+          <div className={tabActiva === 'ayuda' ? 'block' : 'hidden'}><Contactos /></div>
+          <div className={tabActiva === 'pro' ? 'block' : 'hidden'}><Suscripcion isPremium={isPremium} setIsPremium={setIsPremium} setTabActiva={setTabActiva} /></div>
+          <div className={tabActiva === 'perfil' ? 'block' : 'hidden'}><Perfil usuario={usuario} isPremium={isPremium} setTabActiva={setTabActiva} onLogout={salir} /></div>
         </main>
 
         <nav className="bg-gray-950/95 backdrop-blur-2xl border-t border-white/5 absolute bottom-0 w-full flex justify-around px-2 pt-2 pb-safe z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
@@ -119,13 +118,13 @@ function App() {
   );
 }
 
-const NavBtn = ({ id, label, icon, active, set, gold }) => (
+const NavBtn = memo(({ id, label, icon, active, set, gold }) => (
   <button onClick={() => set(id)} className={`flex flex-col items-center justify-center w-16 mb-2 transition-all active:scale-75 ${active === id ? (gold ? 'text-yellow-400' : 'text-blue-500') : 'text-gray-500'}`}>
     <svg className={`w-7 h-7 mb-1 transition-transform ${active === id ? 'scale-110 drop-shadow-[0_0_8px_currentColor]' : ''}`} fill={active === id ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={active === id ? 0 : 2} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
     </svg>
     <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
   </button>
-);
+));
 
 export default App;

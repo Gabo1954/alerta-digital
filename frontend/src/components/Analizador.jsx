@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import api from '../services/api';
 import { StateButton } from './EstadoBotón';
+import { Capacitor } from '@capacitor/core';
+import { AdMob } from '@capacitor-community/admob';
 
 
 const Analizador = ({ isPremium, setTabActiva }) => {
@@ -22,17 +24,50 @@ const Analizador = ({ isPremium, setTabActiva }) => {
 
     const MAX_CHARS = 1000; // Límite de 1000 caracteres
 
-    // --- ADMOB INTERSTICIAL REAL ---
-    const mostrarInterstitialAd = async () => {
-        try {
-            const { AdMob } = await import('@capacitor-community/admob');
-            const { Capacitor } = await import('@capacitor/core');
-            
-            if (Capacitor.getPlatform() === 'web') return;
+    // Referencias para limpiar timeouts al desmontar
+    const timeoutsRef = useRef([]);
+    useEffect(() => {
+        return () => {
+            timeoutsRef.current.forEach(clearTimeout);
+            timeoutsRef.current = [];
+        };
+    }, []);
+    
+    const safeSetTimeout = (fn, delay) => {
+        const id = setTimeout(() => {
+            timeoutsRef.current = timeoutsRef.current.filter(t => t !== id);
+            fn();
+        }, delay);
+        timeoutsRef.current.push(id);
+        return id;
+    };
+    
+    // Inicializar AdMob 1 sola vez al montar (usa imports estáticos)
+    const admobInicializado = useRef(false);
+    
+    useEffect(() => {
+        if (admobInicializado.current) return;
+        admobInicializado.current = true;
+        
+        const init = async () => {
+            try {
+                if (Capacitor.getPlatform() !== 'web') {
+                    await AdMob.initialize();
+                    console.log('AdMob inicializado OK');
+                }
+            } catch (e) {
+                console.warn('AdMob init error:', e);
+            }
+        };
+        init();
+    }, []);
 
-            await AdMob.initialize();
+    // --- ADMOB INTERSTICIAL: se muestra al terminar escaneo (usuario no VIP) ---
+    const mostrarInterstitialAd = async () => {
+        if (Capacitor.getPlatform() === 'web') return;
+        try {
             await AdMob.prepareInterstitial({
-                adId: 'ca-app-pub-3940256099942544/1033173712', // ID de prueba genérico para mayor estabilidad en desarrollo
+                adId: 'ca-app-pub-3940256099942544/1033173712',
                 isTesting: true,
             });
             await AdMob.showInterstitial();
@@ -41,24 +76,17 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         }
     };
 
-    // --- ADMOB REWARDED INTERSTITIAL ---
+    // --- ADMOB REWARDED: prueba gratis al hacer clic en "Ver Video" ---
     const mostrarRewardedAd = async () => {
+        if (Capacitor.getPlatform() === 'web') {
+            setRecompensaObtenida(true);
+            return;
+        }
         try {
-            const { AdMob } = await import('@capacitor-community/admob');
-            const { Capacitor } = await import('@capacitor/core');
-            
-            if (Capacitor.getPlatform() === 'web') {
-                // Simulación en web para desarrollo
-                setRecompensaObtenida(true);
-                return;
-            }
-
-            await AdMob.initialize();
             await AdMob.prepareRewardInterstitialAd({
-                adId: 'ca-app-pub-3940256099942544/5354046379', // ID de prueba para Rewarded Interstitial
+                adId: 'ca-app-pub-3940256099942544/5354046379',
                 isTesting: true,
             });
-
             const reward = await AdMob.showRewardInterstitialAd();
             if (reward) {
                 setRecompensaObtenida(true);
@@ -67,19 +95,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
             console.warn('AdMob Rewarded falló:', e);
         }
     };
-
-    useEffect(() => {
-        const iniciarAdMob = async () => {
-            try {
-                const { AdMob } = await import('@capacitor-community/admob');
-                const { Capacitor } = await import('@capacitor/core');
-                if (Capacitor.getPlatform() !== 'web') {
-                    await AdMob.initialize();
-                }
-            } catch (e) { console.warn('Error inicializando AdMob:', e); }
-        };
-        iniciarAdMob();
-    }, []);
 
     useEffect(() => {
         if (resultado && !isPremium) {
@@ -111,14 +126,14 @@ const Analizador = ({ isPremium, setTabActiva }) => {
             setEstadoBoton('success');
             setResultado(respuesta.data.reporte);
 
-            setTimeout(() => {
+            safeSetTimeout(() => {
                 setEstadoBoton('idle');
             }, 2000);
         } catch (err) {
             setEstadoBoton('error');
             setError('Error de comunicación con el motor de IA.');
 
-            setTimeout(() => {
+            safeSetTimeout(() => {
                 setEstadoBoton('idle');
             }, 5000);
         }
@@ -143,14 +158,14 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                 setRecompensaObtenida(false);
             }
 
-            setTimeout(() => {
+            safeSetTimeout(() => {
                 setEstadoBotonImagen('idle');
             }, 2000);
         } catch (err) {
             setEstadoBotonImagen('error');
             setError('Fallo en el servicio de IA Visual.');
 
-            setTimeout(() => {
+            safeSetTimeout(() => {
                 setEstadoBotonImagen('idle');
             }, 5000);
         }
@@ -161,9 +176,9 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         const contenidoFinal = mensaje || resultado?.texto_leido || "Contenido visual";
         try {
             await api.post('/mensajes/feedback', { contenido: contenidoFinal, esFraude: esFraude });
-            setTimeout(() => setEstadoFeedback('completado'), 2500);
+            safeSetTimeout(() => setEstadoFeedback('completado'), 2500);
         } catch (error) {
-            setTimeout(() => setEstadoFeedback('completado'), 1500);
+            safeSetTimeout(() => setEstadoFeedback('completado'), 1500);
         }
     };
 
@@ -209,9 +224,9 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         const esPeligroso = resultado.nivel_riesgo === 'Alto' || resultado.nivel_riesgo === 'Medio';
         const razonesEvidencia = generarRazonesEvidencia(esPeligroso);
 
-        return (
-            <>
-            <div className="flex-1 w-full overflow-y-auto no-scrollbar px-5 pt-6 pb-32 animate-fade-in-up font-sans">
+    return (
+        <>
+        <div className="w-full px-5 pt-6 pb-32 font-sans shrink-0">
 
                 <button onClick={() => { setResultado(null); setImagenPreview(null); setMensaje(''); setEstadoFeedback('pendiente'); }} className="flex items-center text-gray-400 font-bold mb-8 hover:text-white transition-all bg-gray-800/50 px-5 py-2.5 rounded-xl border border-white/5 active:scale-95 shadow-lg">
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> NUEVO ANÁLISIS
@@ -293,8 +308,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     // ==========================================
     return (
         <>
-        <div className="flex-1 w-full flex flex-col px-5 pt-10 pb-24 font-sans animate-fade-in relative overflow-y-auto no-scrollbar">
-
+        <div className="w-full px-5 pt-10 pb-24 font-sans shrink-0">
             <div className="flex items-center gap-1.5 mb-4 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md w-fit ml-2 shadow-sm shrink-0">
                 <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_blue]"></span>
                 <span className="text-[10px] text-blue-400 font-black uppercase tracking-widest">IA Activa</span>
@@ -319,7 +333,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
             </div>
 
             {tipoAnalisis === 'texto' ? (
-                <div className="flex-1 flex flex-col min-h-0 animate-fade-in relative px-1">
+                <div className="animate-fade-in relative px-1">
                     {/* SHORTCUTS DE APLICACIONES OFICIALES */}
                     <div className="flex gap-2 mb-4 shrink-0">
                         <button onClick={() => window.open('whatsapp://')} className="flex-1 bg-green-600/10 border border-green-500/20 text-green-500 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
@@ -333,7 +347,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                         </button>
                     </div>
 
-                    <div className="relative flex-1 flex flex-col group min-h-[220px]">
+                    <div className="relative group min-h-[220px]">
                         <textarea
                             className="flex-1 w-full bg-gray-900 border border-gray-800 text-white rounded-3xl p-6 pt-16 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder:text-gray-600 text-lg leading-relaxed shadow-inner resize-none"
                             placeholder="Copia el mensaje sospechoso y pégalo aquí..."
@@ -367,7 +381,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                     </button>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col items-center justify-center min-h-[300px] animate-fade-in px-2">
+                <div className="flex flex-col items-center justify-center min-h-[300px] animate-fade-in px-2">
                     {(!isPremium && !recompensaObtenida) ? (
                         <div className="w-full flex flex-col items-center">
                             <div className="text-center p-8 bg-gray-900 rounded-[2.5rem] border border-yellow-500/20 w-full shadow-lg relative overflow-hidden mb-6">
