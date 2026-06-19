@@ -10,12 +10,26 @@ const RestablecerPassword = () => {
 
     // Extraer el token de la URL cuando carga la página
     useEffect(() => {
+        // Intentar obtener token de search params primero
         const urlParams = new URLSearchParams(window.location.search);
-        const urlToken = urlParams.get('token');
+        let urlToken = urlParams.get('token');
+        
+        // Fallback: intentar desde el hash (por si el correo trunca el search)
+        if (!urlToken) {
+            const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
+            urlToken = hashParams.get('token');
+        }
+
         if (urlToken) {
-            setToken(urlToken);
+            // Decodificar el token por si viene URL-encoded
+            try {
+                const decodedToken = decodeURIComponent(urlToken);
+                setToken(decodedToken);
+            } catch {
+                setToken(urlToken);
+            }
         } else {
-            setError('No se encontró un token de seguridad válido en el enlace.');
+            setError('No se encontró un token de seguridad válido en el enlace. Verifica que el enlace esté completo o solicita uno nuevo.');
         }
     }, []);
 
