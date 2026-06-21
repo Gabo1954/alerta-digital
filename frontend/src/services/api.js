@@ -25,4 +25,22 @@ api.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
+// Interceptor para manejar errores de autenticación (401)
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Token expirado o inválido - limpiar sesión y redirigir a login
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            localStorage.removeItem('isPro');
+            localStorage.removeItem('escaneo_vip_regalo_usado');
+            
+            // Recargar la página para volver al login
+            window.location.href = '/';
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;
