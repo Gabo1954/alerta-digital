@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // 🔥 IP de tu PC en la red local
-const IP_PC = '192.168.1.114';
+const IP_PC = '192.168.1.149';
 
 // Forzamos la IP directamente - sin detección compleja que pueda fallar en Android
 const API_URL = `http://${IP_PC}:5000/api`;
