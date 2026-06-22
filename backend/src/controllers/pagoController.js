@@ -17,7 +17,7 @@ exports.crearSesionPago = async (req, res) => {
         const sessionId = `SES-${idUsuario}`;
         const amount = 2990;
         
-        const returnUrl = 'http://localhost:5173/pago-resultado'; 
+        const returnUrl = 'https://alerta-digital.onrender.com/pago-resultado'; 
 
         const response = await webpay.create(buyOrder, sessionId, amount, returnUrl);
         
