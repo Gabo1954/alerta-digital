@@ -1,12 +1,10 @@
 import axios from 'axios';
 
-// 🔥 IP de tu PC en la red local
-const IP_PC = '192.168.1.114';
+// 🔥 URL OFICIAL EN LA NUBE (Render)
+// Reemplazamos la IP local (192.168.1.149) por tu servidor en producción
+const API_URL = 'https://alerta-digital.onrender.com/api';
 
-// Forzamos la IP directamente - sin detección compleja que pueda fallar en Android
-const API_URL = `http://${IP_PC}:5000/api`;
-
-console.log('%c[API] URL:', 'background: #3b82f6; color: white; font-weight: bold;', API_URL);
+console.log('%c[API] URL Base:', 'background: #3b82f6; color: white; font-weight: bold;', API_URL);
 console.log('%c[API] Platform:', 'background: #3b82f6; color: white; font-weight: bold;', 
     typeof window !== 'undefined' ? (window.Capacitor ? window.Capacitor.getPlatform() : 'web') : 'unknown');
 

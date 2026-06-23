@@ -17,7 +17,9 @@ exports.crearSesionPago = async (req, res) => {
         const sessionId = `SES-${idUsuario}`;
         const amount = 2990;
         
-        const returnUrl = 'http://localhost:5173/pago-resultado'; 
+        // 1. Apuntamos a tu Backend, enviando el ID del usuario como parámetro
+        // Asegúrate de que esta URL coincida con tu ruta en Render
+        const returnUrl = `https://alerta-digital.onrender.com/api/pagos/retorno?id=${idUsuario}`; 
 
         const response = await webpay.create(buyOrder, sessionId, amount, returnUrl);
         
@@ -34,11 +36,13 @@ exports.crearSesionPago = async (req, res) => {
 };
 
 exports.confirmarPago = async (req, res) => {
-    const { token_ws } = req.body;
-    const idUsuario = req.usuario.id;
+    // 2. Transbank envía la respuesta. Extraemos el token y el ID del usuario
+    const token_ws = req.query.token_ws || req.body.token_ws;
+    const idUsuario = req.query.id; 
 
+    // Si el usuario canceló el pago, Transbank no envía token_ws
     if (!token_ws) {
-        return res.status(400).json({ error: 'Token de pago no recibido.' });
+        return res.redirect('alertadigital://pago-resultado?status=cancelado');
     }
 
     try {
@@ -46,33 +50,24 @@ exports.confirmarPago = async (req, res) => {
 
         if (response.response_code === 0 && response.status === 'AUTHORIZED') {
             
-            // LA SOLUCIÓN DB: Forzamos el autoCommit a true en esta consulta específica
             const sql = `UPDATE usuario SET es_vip = 1 WHERE id_usuario = :id_user`;
             
             try {
                 await execute(sql, { id_user: idUsuario }, { autoCommit: true });
-                console.log(`[Oracle] Usuario ${idUsuario} actualizado a VIP de forma permanente.`);
+                console.log(`[Oracle] Usuario ${idUsuario} actualizado a VIP.`);
             } catch (dbError) {
                 console.error('Error DB Oracle al subir a VIP:', dbError);
             }
 
-            return res.status(200).json({ 
-                autorizado: true, 
-                mensaje: "Transacción aprobada con éxito.",
-                detalles: response 
-            });
+            // 3. MAGIA NATIVA: Redirigimos al esquema Android para cerrar Chrome
+            return res.redirect('alertadigital://pago-resultado?status=success');
+
         } else {
             console.warn(`[Webpay] Pago no autorizado. Status: ${response.status}`);
-            return res.status(401).json({ 
-                autorizado: false, 
-                mensaje: "La transacción fue rechazada o anulada por el usuario.",
-                codigo: response.response_code
-            });
+            return res.redirect('alertadigital://pago-resultado?status=rechazado');
         }
     } catch (error) {
         console.error('Error crítico en Webpay Commit:', error);
-        res.status(500).json({ 
-            error: 'Fallo interno al validar el pago con el servidor bancario.' 
-        });
+        return res.redirect('alertadigital://pago-resultado?status=error');
     }
 };

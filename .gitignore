@@ -4,6 +4,9 @@ Thumbs.db
 *.log
 *.msi
 *.exe
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # --- DEPENDENCIES ---
 # Ignora las carpetas pesadas de librerías
@@ -20,17 +23,27 @@ frontend/node_modules/
 .env.production.local
 
 # --- ORACLE CLOUD (BACKEND) ---
-# Ignora la carpeta de la Wallet y archivos comprimidos de conexión
-backend/wallet/
-backend/*.zip
-wallet/
+# NOTA: La carpeta de la Wallet NO se ignora para que Render pueda acceder a ella.
+# Solo ignoramos los archivos comprimidos originales (.zip) que descargas de Oracle.
 *.zip
 
-# --- FRONTEND BUILDS ---
-# Ignora las carpetas de producción de React/Vite
+# --- FRONTEND BUILDS (React/Vite) ---
+# Ignora las carpetas de producción generadas
 frontend/dist/
 frontend/build/
 dist/
+build/
+
+# --- ANDROID / CAPACITOR ---
+# Ignora los archivos compilados pesados y cachés de Android Studio
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/src/main/assets/public/
+*.apk
+*.aab
+*.keystore
 
 # --- IDE FILES ---
 .vscode/

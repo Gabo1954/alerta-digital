@@ -303,8 +303,7 @@ exports.recuperarPassword = async (req, res) => {
             { expiresIn: '15m' }
         );
 
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        const resetLink = `${frontendUrl}/restablecer-password?token=${resetToken}`;
+        const resetLink = `https://alerta-digital.onrender.com//restablecer-password?token=${resetToken}`;
 
         const mailOptions = {
             from: `"Alerta Digital" <${process.env.EMAIL_USER}>`,
