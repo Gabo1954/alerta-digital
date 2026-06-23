@@ -14,6 +14,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     const [estadoFeedback, setEstadoFeedback] = useState('pendiente');
     const [error, setError] = useState('');
     const [imagenPreview, setImagenPreview] = useState(null);
+    const [mostrarTooltip, setMostrarTooltip] = useState(false);
     const fileInputRef = useRef(null);
     
     // Estado para el escaneo VIP gratuito (Recompensado)
@@ -309,19 +310,70 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     return (
         <>
         <div className="w-full px-5 pt-10 pb-24 font-sans shrink-0">
-            <div className="flex items-center gap-1.5 mb-4 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md w-fit ml-2 shadow-sm shrink-0">
-                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_blue]"></span>
-                <span className="text-[10px] text-blue-400 font-black uppercase tracking-widest">IA Activa</span>
+            <div className="flex items-center justify-between mb-4 px-2 shrink-0">
+                <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md w-fit shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_blue]"></span>
+                    <span className="text-[10px] text-blue-400 font-black uppercase tracking-widest">IA Activa</span>
+                    {/* Info icon with tooltip */}
+                    <div className="relative">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setMostrarTooltip(!mostrarTooltip);
+                            }}
+                            className="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 hover:bg-blue-500/30 hover:border-blue-300 flex items-center justify-center transition-all active:scale-90 shrink-0"
+                            aria-label="Información del escáner"
+                        >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </button>
+                        {mostrarTooltip && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setMostrarTooltip(false)} />
+                                <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-gray-900/95 backdrop-blur-xl border border-gray-700/80 rounded-2xl p-4 shadow-2xl shadow-black/50" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-start gap-3">
+                                        <div className="w-7 h-7 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p className="text-white text-xs font-black uppercase tracking-widest mb-2">¿Cómo funciona?</p>
+                                            <p className="text-gray-300 text-sm leading-relaxed">
+                                                Nuestro modelo evalúa factores de riesgo como enlaces no reconocidos, sentido de urgencia y solicitudes de datos, sin intervención humana.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setMostrarTooltip(false);
+                                        }}
+                                        className="absolute top-2 right-2 text-gray-500 hover:text-white transition-colors"
+                                        aria-label="Cerrar"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {/* HEADER CORREGIDO SIN COLISIONES */}
             <div className="mb-6 flex justify-between items-center px-2 shrink-0">
-                <h2 className="flex flex-col text-4xl font-black tracking-tighter text-white uppercase leading-none select-none">
-                    <span>Escáner</span>
-                    <span className="text-3xl font-extralight tracking-normal normal-case italic bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-400 bg-clip-text text-transparent block mt-1 py-1 pl-0.5">
-                        Digital
-                    </span>
-                </h2>
+                <div className="flex items-center gap-3">
+                    <h2 className="flex flex-col text-4xl font-black tracking-tighter text-white uppercase leading-none select-none">
+                        <span>Escáner</span>
+                        <span className="text-3xl font-extralight tracking-normal normal-case italic bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-400 bg-clip-text text-transparent block mt-1 py-1 pl-0.5">
+                            Digital
+                        </span>
+                    </h2>
+                </div>
                 <button onClick={() => setTabActiva('historial')} className="bg-gray-800 border border-gray-700 text-gray-300 p-3.5 rounded-2xl hover:bg-gray-700 transition-all shadow-lg active:scale-95 self-end">
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                 </button>
