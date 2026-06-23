@@ -314,17 +314,17 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md w-fit shadow-sm">
                     <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_blue]"></span>
                     <span className="text-[10px] text-blue-400 font-black uppercase tracking-widest">IA Activa</span>
-                    {/* Info icon with tooltip */}
+                    {/* tooltip */}
                     <div className="relative">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setMostrarTooltip(!mostrarTooltip);
                             }}
-                            className="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 hover:bg-blue-500/30 hover:border-blue-300 flex items-center justify-center transition-all active:scale-90 shrink-0"
+                            className="w-6 h-6 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 hover:bg-blue-500/30 hover:border-blue-300 flex items-center justify-center transition-all active:scale-90 shrink-0"
                             aria-label="Información del escáner"
                         >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </button>
