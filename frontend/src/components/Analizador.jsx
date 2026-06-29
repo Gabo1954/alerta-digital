@@ -368,17 +368,15 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                         <span>{mensaje.length} / {MAX_CHARS}</span>
                     </div>
 
-                    <button onClick={analizarTextoAPI} className="w-full shrink-0">
-                        <StateButton
-                            state={estadoBoton}
-                            onClick={analizarTextoAPI}
-                            variant="primary"
-                        >
-                            {estadoBoton === 'loading' && 'PROCESANDO...'}
-                            {estadoBoton === 'success' && '¡ANÁLISIS COMPLETADO!'}
-                            {(estadoBoton === 'idle' || estadoBoton === 'error') && '🔍 INICIAR ESCANEO'}
-                        </StateButton>
-                    </button>
+                    <StateButton
+                        state={estadoBoton}
+                        onClick={analizarTextoAPI}
+                        variant="primary"
+                    >
+                        {estadoBoton === 'loading' && 'PROCESANDO...'}
+                        {estadoBoton === 'success' && '¡ANÁLISIS COMPLETADO!'}
+                        {(estadoBoton === 'idle' || estadoBoton === 'error') && '🔍 INICIAR ESCANEO'}
+                    </StateButton>
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center min-h-[300px] animate-fade-in px-2">
@@ -438,17 +436,15 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                                 </div>
                             )}
 
-                            <button className="w-full shrink-0">
-                                <StateButton
-                                    state={estadoBotonImagen}
-                                    onClick={analizarImagenVIP}
-                                    variant="primary"
-                                >
-                                    {estadoBotonImagen === 'loading' && 'ANALIZANDO...'}
-                                    {estadoBotonImagen === 'success' && '¡ANÁLISIS COMPLETADO!'}
-                                    {(estadoBotonImagen === 'idle' || estadoBotonImagen === 'error') && '🔍 INICIAR ANÁLISIS VISUAL'}
-                                </StateButton>
-                            </button>
+                            <StateButton
+                                state={estadoBotonImagen}
+                                onClick={analizarImagenVIP}
+                                variant="primary"
+                            >
+                                {estadoBotonImagen === 'loading' && 'ANALIZANDO...'}
+                                {estadoBotonImagen === 'success' && '¡ANÁLISIS COMPLETADO!'}
+                                {(estadoBotonImagen === 'idle' || estadoBotonImagen === 'error') && '🔍 INICIAR ANÁLISIS VISUAL'}
+                            </StateButton>
                         </div>
                     )}
                 </div>
