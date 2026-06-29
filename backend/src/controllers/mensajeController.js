@@ -75,7 +75,7 @@ exports.analizarImagenVIP = async (req, res) => {
     try {
         // [!] SOLUCIÓN AL ERROR 500 AL ESCANEAR IMAGEN: 
         // Agregamos límites infinitos para que Axios soporte imágenes pesadas sin caerse.
-        const pythonResponse = await axios.post('http://127.0.0.1:8000/api/ia/ocr', {
+        const pythonResponse = await axios.post('https://alerta-digital-1.onrender.com/', {
             image_base64: imagen_base64
         }, {
             maxContentLength: Infinity,
