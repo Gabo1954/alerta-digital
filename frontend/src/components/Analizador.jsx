@@ -17,6 +17,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     const fileInputRef = useRef(null);
     
     // Estado para el escaneo VIP gratuito (Recompensado)
+    const [infoModal, setInfoModal] = useState(false);
     const [escaneoGratisDisponible, setEscaneoGratisDisponible] = useState(() => {
         return localStorage.getItem('escaneo_vip_regalo_usado') !== 'true';
     });
@@ -309,9 +310,32 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     return (
         <>
         <div className="w-full px-5 pt-10 pb-24 font-sans shrink-0">
-            <div className="flex items-center gap-1.5 mb-4 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md w-fit ml-2 shadow-sm shrink-0">
+            <div className="flex items-center gap-1.5 mb-4 px-2 py-1 bg-blue-500/10 border border-blue-500/20 rounded-md w-fit ml-2 shadow-sm shrink-0 relative">
                 <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_blue]"></span>
                 <span className="text-[10px] text-blue-400 font-black uppercase tracking-widest">IA Activa</span>
+                <button 
+                    onClick={() => setInfoModal(true)}
+                    className="w-3.5 h-3.5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-[8px] font-black hover:bg-blue-500/40 transition-all active:scale-90 ml-0.5"
+                    title="Más información"
+                >
+                    i
+                </button>
+
+                {infoModal && (
+                    <>
+                        <div className="fixed inset-0 z-40" onClick={() => setInfoModal(false)}></div>
+                        <div className="absolute top-full left-0 mt-2 z-50 bg-gray-900 border border-blue-500/30 rounded-xl p-4 shadow-2xl shadow-blue-500/10 w-72 animate-fade-in">
+                            <div className="flex items-start gap-3">
+                                <div className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </div>
+                                <p className="text-gray-300 text-xs leading-relaxed font-medium">
+                                    Nuestro modelo evalúa factores de riesgo como enlaces no reconocidos, sentido de urgencia y solicitudes de datos, sin intervención humana.
+                                </p>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* HEADER CORREGIDO SIN COLISIONES */}
