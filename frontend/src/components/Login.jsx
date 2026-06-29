@@ -88,8 +88,8 @@ const Login = ({ onLoginSuccess, irARegistro }) => {
             <div className="bg-gray-900/80 backdrop-blur-xl p-8 sm:p-10 rounded-[3rem] shadow-2xl w-full max-w-md border border-white/5 relative z-10 animate-fade-in-up">
                 
                 <div className="flex justify-center mb-6">
-                    <div className="w-20 h-20 bg-blue-500/10 text-blue-500 rounded-3xl flex items-center justify-center text-4xl shadow-[0_0_30px_rgba(59,130,246,0.3)] border border-blue-500/20 rotate-3">
-                        🛡️
+                    <div className="w-28 h-28 bg-blue-500/10 rounded-3xl flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.3)] border border-blue-500/20 p-4">
+                        <img src="/logo.png" alt="Alerta Digital" className="w-full h-full object-contain" />
                     </div>
                 </div>
 

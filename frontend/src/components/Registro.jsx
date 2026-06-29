@@ -143,6 +143,13 @@ const manejarRegistro = async (e) => {
             <div className="absolute top-0 left-0 w-full h-full bg-linear-to-br from-blue-900/10 to-black pointer-events-none"></div>
 
             <div className="bg-gray-900/80 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-white/5 max-h-[90vh] overflow-y-auto no-scrollbar relative z-10 animate-fade-in-up">
+                {/* LOGO */}
+                <div className="flex justify-center mb-6">
+                    <div className="w-28 h-28 bg-blue-500/10 rounded-3xl flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.3)] border border-blue-500/20 p-4">
+                        <img src="/logo.png" alt="Alerta Digital" className="w-full h-full object-contain" />
+                    </div>
+                </div>
+
                 <div className="mb-6">
                     <button onClick={irALogin} className="text-gray-500 hover:text-white transition-colors mb-4 flex items-center text-sm font-bold active:scale-95">
                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7m0 0l7-7m-7 7h18" /></svg> Volver

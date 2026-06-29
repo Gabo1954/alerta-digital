@@ -69,10 +69,8 @@ function App() {
         <header className="pt-safe bg-gray-950/90 backdrop-blur-2xl border-b border-white/5 z-50 shrink-0 w-full">
           <div className="px-5 pt-3 pb-4 flex justify-between items-center w-full">
             <button onClick={() => setTabActiva('inicio')} className="flex items-center gap-3 text-left transition-all hover:opacity-80 active:scale-95 outline-none">
-              <div className={`w-9 h-9 rounded-[10px] flex items-center justify-center ${isPremium ? 'bg-linear-to-tr from-yellow-400 to-yellow-600 animate-pulse' : 'bg-linear-to-tr from-blue-500 to-blue-700'} shadow-lg shrink-0`}>
-                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
+              <div className={`w-9 h-9 rounded-[10px] flex items-center justify-center ${isPremium ? 'bg-linear-to-tr from-yellow-400 to-yellow-600 animate-pulse' : 'bg-linear-to-tr from-blue-500 to-blue-700'} shadow-lg shrink-0 overflow-hidden`}>
+                <img src="/logo.png" alt="Alerta Digital" className="w-7 h-7 object-contain brightness-0 invert" />
               </div>
               <div>
                 <h1 className="text-lg font-black text-white tracking-tighter leading-none font-sans">Alerta Digital</h1>
