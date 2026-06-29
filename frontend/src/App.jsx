@@ -9,12 +9,16 @@ import Suscripcion from './components/Suscripcion';
 import PagoResultado from './components/PagoResultado';
 import Perfil from './components/Perfil';
 import RestablecerPassword from './components/RestablecerPassword';
+import OnboardingConsent from './components/OnboardingConsent'; // NUEVO IMPORT LEGAL
 
 function App() {
   const [usuario, setUsuario] = useState(null);
   const [tabActiva, setTabActiva] = useState('inicio');
   const [isPremium, setIsPremium] = useState(false);
   const [vistaAuth, setVistaAuth] = useState('login');
+  
+  // NUEVO ESTADO: Controla si el usuario ya pasó la barrera legal
+  const [consentimientoValidado, setConsentimientoValidado] = useState(false);
 
   const path = window.location.pathname;
 
@@ -48,6 +52,7 @@ function App() {
       setUsuario(null);
       setIsPremium(false);
       setTabActiva('inicio');
+      setConsentimientoValidado(false); // Reseteamos el estado legal al salir
       window.location.href = '/';
     }
   };
@@ -55,12 +60,19 @@ function App() {
   if (path === '/pago-resultado') return <PagoResultado />;
   if (path === '/restablecer-password') return <RestablecerPassword />;
 
+  // Si no hay usuario logueado, mostramos Login o Registro
   if (!usuario) {
     return vistaAuth === 'login'
       ? <Login onLoginSuccess={manejarAuthSuccess} irARegistro={() => setVistaAuth('registro')} />
       : <Registro onRegistroSuccess={manejarAuthSuccess} irALogin={() => setVistaAuth('login')} />;
   }
 
+  // Si hay usuario, pero NO ha validado el consentimiento, mostramos el modal a pantalla completa
+  if (!consentimientoValidado) {
+    return <OnboardingConsent onConsentido={() => setConsentimientoValidado(true)} />;
+  }
+
+  // Si hay usuario y YA validó el consentimiento, renderizamos la app normal
   return (
     <div className="h-dvh w-full bg-black flex justify-center selection:bg-blue-500 selection:text-white">
       <div className="w-full max-w-md bg-gray-950 h-full relative flex flex-col overflow-hidden shadow-2xl">
@@ -97,7 +109,6 @@ function App() {
           {isPremium && <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-yellow-500/5 blur-[120px] pointer-events-none"></div>}
           
           {/* TODOS los tabs siempre montados, solo ocultos con CSS */}
-          {/* Esto EVITA el freeze porque React NO desmonta/monta componentes */}
           <div className={tabActiva === 'inicio' ? 'block' : 'hidden'}><Analizador isPremium={isPremium} setTabActiva={setTabActiva} /></div>
           <div className={tabActiva === 'historial' ? 'block' : 'hidden'}><Historial setTabActiva={setTabActiva} /></div>
           <div className={tabActiva === 'aprender' ? 'block' : 'hidden'}><Educacion usuario={usuario} isPremium={isPremium} setTabActiva={setTabActiva} /></div>
