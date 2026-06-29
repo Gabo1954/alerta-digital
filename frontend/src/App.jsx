@@ -10,6 +10,7 @@ import PagoResultado from './components/PagoResultado';
 import Perfil from './components/Perfil';
 import RestablecerPassword from './components/RestablecerPassword';
 import OnboardingConsent from './components/OnboardingConsent'; // NUEVO IMPORT LEGAL
+import logo from './assets/logo.png';
 
 function App() {
   const [usuario, setUsuario] = useState(null);
@@ -82,7 +83,7 @@ function App() {
           <div className="px-5 pt-3 pb-4 flex justify-between items-center w-full">
               <button onClick={() => setTabActiva('inicio')} className="flex items-center gap-3 text-left transition-all hover:opacity-80 active:scale-95 outline-none">
                 <div className={`w-9 h-9 rounded-[10px] flex items-center justify-center ${isPremium ? 'bg-linear-to-tr from-yellow-400 to-yellow-600 animate-pulse' : 'bg-linear-to-tr from-blue-500 to-blue-700'} shadow-lg shrink-0 p-1`}>
-                  <img src="/logo.png" alt="Alerta Digital" className="w-full h-full object-contain" />
+                  <img src={logo} alt="Alerta Digital" className="w-full h-full object-contain" />
                 </div>
               <div>
                 <h1 className="text-lg font-black text-white tracking-tighter leading-none font-sans">Alerta Digital</h1>

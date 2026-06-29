@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import api from '../services/api';
+import logo from '../assets/logo.png';
 
 const Registro = ({ onRegistroSuccess, irALogin }) => {
     const [form, setForm] = useState({ 
@@ -144,7 +145,7 @@ const manejarRegistro = async (e) => {
 
             <div className="bg-gray-900/80 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-white/5 max-h-[90vh] overflow-y-auto no-scrollbar relative z-10 animate-fade-in-up">
                 <div className="flex justify-center mb-4">
-                    <img src="/logo.png" alt="Alerta Digital" className="w-20 h-20 object-contain drop-shadow-[0_0_30px_rgba(59,130,246,0.4)]" />
+                    <img src={logo} alt="Alerta Digital" className="w-20 h-20 object-contain drop-shadow-[0_0_30px_rgba(59,130,246,0.4)]" />
                 </div>
                 <div className="mb-6">
                     <button onClick={irALogin} className="text-gray-500 hover:text-white transition-colors mb-4 flex items-center text-sm font-bold active:scale-95">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GoogleLogin } from '@react-oauth/google';
 import api from '../services/api';
+import logo from '../assets/logo.png';
 
 const Login = ({ onLoginSuccess, irARegistro }) => { 
     // Estados normales
@@ -85,7 +86,7 @@ const Login = ({ onLoginSuccess, irARegistro }) => {
             <div className="bg-gray-900/80 backdrop-blur-xl p-8 sm:p-10 rounded-[3rem] shadow-2xl w-full max-w-md border border-white/5 relative z-10 animate-fade-in-up">
                 
                 <div className="flex justify-center mb-6">
-                    <img src="/logo.png" alt="Alerta Digital" className="w-24 h-24 object-contain drop-shadow-[0_0_30px_rgba(59,130,246,0.4)]" />
+                    <img src={logo} alt="Alerta Digital" className="w-24 h-24 object-contain drop-shadow-[0_0_30px_rgba(59,130,246,0.4)]" />
                 </div>
 
                 <div className="text-center mb-8">

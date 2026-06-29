@@ -63,9 +63,14 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         init();
     }, []);
 
+    // Ref para controlar que el anuncio intersticial solo se muestre UNA vez por escaneo
+    const interstitialMostrado = useRef(false);
+
     // --- ADMOB INTERSTICIAL: se muestra al terminar escaneo (usuario no VIP) ---
     const mostrarInterstitialAd = async () => {
         if (Capacitor.getPlatform() === 'web') return;
+        if (interstitialMostrado.current) return; // Ya se mostró este escaneo
+        interstitialMostrado.current = true;
         try {
             await AdMob.prepareInterstitial({
                 adId: 'ca-app-pub-3940256099942544/1033173712',
@@ -116,6 +121,14 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         } catch (err) {
             setError('Permiso denegado para el portapapeles.');
         }
+    };
+
+    const reiniciarEscaneo = () => {
+        setResultado(null);
+        setImagenPreview(null);
+        setMensaje('');
+        setEstadoFeedback('pendiente');
+        interstitialMostrado.current = false; // Reinicia el control del anuncio
     };
 
     const analizarTextoAPI = async () => {
@@ -229,7 +242,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         <>
         <div className="w-full px-5 pt-6 pb-32 font-sans shrink-0">
 
-                <button onClick={() => { setResultado(null); setImagenPreview(null); setMensaje(''); setEstadoFeedback('pendiente'); }} className="flex items-center text-gray-400 font-bold mb-8 hover:text-white transition-all bg-gray-800/50 px-5 py-2.5 rounded-xl border border-white/5 active:scale-95 shadow-lg">
+                <button onClick={reiniciarEscaneo} className="flex items-center text-gray-400 font-bold mb-8 hover:text-white transition-all bg-gray-800/50 px-5 py-2.5 rounded-xl border border-white/5 active:scale-95 shadow-lg">
                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg> NUEVO ANÁLISIS
                 </button>
 
