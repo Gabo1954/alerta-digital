@@ -75,12 +75,20 @@ exports.analizarImagenVIP = async (req, res) => {
     try {
         // [!] SOLUCIÓN AL ERROR 500 AL ESCANEAR IMAGEN: 
         // Agregamos límites infinitos para que Axios soporte imágenes pesadas sin caerse.
-        const pythonResponse = await axios.post('https://alerta-digital-1.onrender.com/', {
-            image_base64: imagen_base64
-        }, {
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity
-        });
+        const pythonResponse = await axios.post(
+    'https://alerta-digital-1.onrender.com/api/ia/ocr',
+    {
+        image_base64: imagen_base64
+    },
+    {
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        timeout: 60000,
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity
+    }
+);
 
         if (!pythonResponse.data.success) {
             console.error("Python OCR devolvió error:", pythonResponse.data.error);
@@ -141,10 +149,16 @@ exports.analizarImagenVIP = async (req, res) => {
             }
         });
 
-    } catch (error) {
-        console.error("Error crítico en Gateway de IA:", error.message || error);
-        res.status(500).json({ error: "Error de comunicación con el Microservicio IA en Python." });
-    }
+    }catch (error) {
+    console.error("===== ERROR OCR =====");
+    console.error(error.response?.data);
+    console.error(error.message);
+    console.error("=====================");
+
+    res.status(500).json({
+        error: error.response?.data || error.message
+    });
+}
 };
 
 // ==========================================
