@@ -7,4 +7,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 router.get('/', authMiddleware, userController.obtenerUsuarios);
 router.get('/:id', authMiddleware, userController.obtenerUsuarioPorId);
 
+// NUEVA RUTA: Eliminación de cuenta
+router.post('/eliminar-cuenta', authMiddleware, userController.solicitarEliminacion);
+
 module.exports = router;

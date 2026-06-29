@@ -140,7 +140,7 @@ exports.registrarUsuario = async (req, res) => {
 };
 
 // ==========================================
-// 2. LOGIN DE USUARIO (TRADICIONAL)
+// 2. LOGIN DE USUARIO (CON REACTIVACIÓN LÓGICA)
 // ==========================================
 exports.loginUsuario = async (req, res) => {
     const { correo, password } = req.body;
@@ -150,8 +150,9 @@ exports.loginUsuario = async (req, res) => {
     }
 
     try {
+        // Se añade fecha_eliminacion_logica a la consulta
         const sql = `
-            SELECT id_usuario, nombre, ap_paterno, correo, password, es_vip, tipo_usuario_id_tipo_usuario 
+            SELECT id_usuario, nombre, ap_paterno, correo, password, es_vip, tipo_usuario_id_tipo_usuario, fecha_eliminacion_logica 
             FROM usuario 
             WHERE correo = :correo
         `;
@@ -162,16 +163,32 @@ exports.loginUsuario = async (req, res) => {
         }
 
         const usuario = result.rows[0];
+        
+        // Manejador seguro para el formato de salida de Oracle (Arreglo u Objeto)
+        const passwordDB = usuario.PASSWORD !== undefined ? usuario.PASSWORD : usuario[4];
+        const idUsuario = usuario.ID_USUARIO !== undefined ? usuario.ID_USUARIO : usuario[0];
+        const nombreUsr = usuario.NOMBRE !== undefined ? usuario.NOMBRE : usuario[1];
+        const rolUsr = usuario.TIPO_USUARIO_ID_TIPO_USUARIO !== undefined ? usuario.TIPO_USUARIO_ID_TIPO_USUARIO : usuario[6];
+        const esVip = usuario.ES_VIP !== undefined ? usuario.ES_VIP : usuario[5];
+        const fechaEliminacion = usuario.FECHA_ELIMINACION_LOGICA !== undefined ? usuario.FECHA_ELIMINACION_LOGICA : usuario[7];
 
-        const passwordValido = await bcrypt.compare(password, usuario.PASSWORD);
+        const passwordValido = await bcrypt.compare(password, passwordDB);
         if (!passwordValido) {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
 
+        // LA MAGIA: Verificamos si la cuenta estaba en proceso de eliminación lógica
+        if (fechaEliminacion !== null && fechaEliminacion !== undefined) {
+            const sqlReactivar = `UPDATE usuario SET fecha_eliminacion_logica = NULL WHERE id_usuario = :id_user`;
+            await execute(sqlReactivar, { id_user: idUsuario }, { autoCommit: true });
+            
+            console.log(`[Reactivación] Usuario ${idUsuario} recuperó su cuenta mediante Login.`);
+        }
+
         const payload = {
-            id: usuario.ID_USUARIO,
-            nombre: usuario.NOMBRE,
-            rol: usuario.TIPO_USUARIO_ID_TIPO_USUARIO
+            id: idUsuario,
+            nombre: nombreUsr,
+            rol: rolUsr
         };
 
         const token = jwt.sign(payload, process.env.JWT_SECRET || 'super_secreto_alerta_digital_duoc', { expiresIn: '8h' });
@@ -180,10 +197,10 @@ exports.loginUsuario = async (req, res) => {
             mensaje: '¡Login exitoso!',
             token: token,
             usuario: {
-                id: usuario.ID_USUARIO,
-                nombre: usuario.NOMBRE,
-                correo: usuario.CORREO,
-                es_vip: usuario.ES_VIP === 1
+                id: idUsuario,
+                nombre: nombreUsr,
+                correo: correo,
+                es_vip: esVip === 1
             }
         });
 
@@ -194,7 +211,7 @@ exports.loginUsuario = async (req, res) => {
 };
 
 // ==========================================
-// 3. LOGIN CON GOOGLE OAUTH
+// 3. LOGIN CON GOOGLE OAUTH (CON REACTIVACIÓN LÓGICA)
 // ==========================================
 const CLIENT_ID = "240556836925-j0alagivti7gr579ajs3d98kmbh59d4i.apps.googleusercontent.com";
 const googleClient = new OAuth2Client(CLIENT_ID);
@@ -212,7 +229,8 @@ exports.googleLogin = async (req, res) => {
 
         const { email, name } = ticket.getPayload();
 
-        const sqlBuscar = `SELECT id_usuario, nombre, correo, es_vip, tipo_usuario_id_tipo_usuario FROM usuario WHERE correo = :email`;
+        // Se añade fecha_eliminacion_logica a la consulta
+        const sqlBuscar = `SELECT id_usuario, nombre, correo, es_vip, tipo_usuario_id_tipo_usuario, fecha_eliminacion_logica FROM usuario WHERE correo = :email`;
         const resultBuscar = await execute(sqlBuscar, { email });
 
         let usuario;
@@ -239,13 +257,24 @@ exports.googleLogin = async (req, res) => {
             };
         } else {
             const row = resultBuscar.rows[0];
+            
+            // Adaptador dual para manejar formato array/object en oracledb
             usuario = {
-                id: row[0],
-                nombre: row[1],
-                correo: row[2],
-                es_vip: row[3] === 1,
-                rol: row[4]
+                id: row.ID_USUARIO !== undefined ? row.ID_USUARIO : row[0],
+                nombre: row.NOMBRE !== undefined ? row.NOMBRE : row[1],
+                correo: row.CORREO !== undefined ? row.CORREO : row[2],
+                es_vip: (row.ES_VIP !== undefined ? row.ES_VIP : row[3]) === 1,
+                rol: row.TIPO_USUARIO_ID_TIPO_USUARIO !== undefined ? row.TIPO_USUARIO_ID_TIPO_USUARIO : row[4]
             };
+            
+            const fechaEliminacion = row.FECHA_ELIMINACION_LOGICA !== undefined ? row.FECHA_ELIMINACION_LOGICA : row[5];
+            
+            // LA MAGIA: Reactivación vía Google
+            if (fechaEliminacion !== null && fechaEliminacion !== undefined) {
+                const sqlReactivar = `UPDATE usuario SET fecha_eliminacion_logica = NULL WHERE id_usuario = :id_user`;
+                await execute(sqlReactivar, { id_user: usuario.id }, { autoCommit: true });
+                console.log(`[Reactivación] Usuario ${usuario.id} recuperó su cuenta mediante Google Login.`);
+            }
         }
 
         const sessionToken = jwt.sign(
@@ -271,8 +300,8 @@ exports.googleLogin = async (req, res) => {
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER, // Llama al correo desde el .env
-        pass: process.env.EMAIL_PASS  // Llama a la contraseña desde el .env
+        user: process.env.EMAIL_USER, 
+        pass: process.env.EMAIL_PASS  
     }
 });
 
@@ -284,17 +313,21 @@ exports.recuperarPassword = async (req, res) => {
     }
 
     try {
-        const sql = `SELECT id_usuario, correo, nombre FROM usuario WHERE correo = :correo`;
+        // Validación extra: Sólo enviar correos a cuentas activas
+        const sql = `SELECT id_usuario, correo, nombre FROM usuario WHERE correo = :correo AND fecha_eliminacion_logica IS NULL`;
         const result = await execute(sql, { correo });
 
         if (result.rows.length === 0) {
-            return res.status(200).json({ mensaje: 'Si el correo existe en nuestro sistema, hemos enviado un enlace de recuperación.' });
+            // Mensaje ambiguo por seguridad, como dictan las buenas prácticas
+            return res.status(200).json({ mensaje: 'Si el correo existe en nuestro sistema y está activo, hemos enviado un enlace de recuperación.' });
         }
+        
+        const rowData = result.rows[0];
 
         const usuario = {
-            id: result.rows[0].ID_USUARIO,
-            correo: result.rows[0].CORREO,
-            nombre: result.rows[0].NOMBRE
+            id: rowData.ID_USUARIO !== undefined ? rowData.ID_USUARIO : rowData[0],
+            correo: rowData.CORREO !== undefined ? rowData.CORREO : rowData[1],
+            nombre: rowData.NOMBRE !== undefined ? rowData.NOMBRE : rowData[2]
         };
 
         const resetToken = jwt.sign(
@@ -330,7 +363,7 @@ exports.recuperarPassword = async (req, res) => {
         };
 
         await transporter.sendMail(mailOptions);
-        res.status(200).json({ mensaje: 'Si el correo existe en nuestro sistema, hemos enviado un enlace de recuperación.' });
+        res.status(200).json({ mensaje: 'Si el correo existe en nuestro sistema y está activo, hemos enviado un enlace de recuperación.' });
 
     } catch (error) {
         console.error('Error en recuperarPassword:', error);
@@ -349,20 +382,18 @@ exports.actualizarPassword = async (req, res) => {
     }
 
     try {
-        // Verificar que el token sea válido y no haya expirado
         const decodificado = jwt.verify(token, process.env.JWT_SECRET || 'super_secreto_alerta_digital_duoc');
         const idUsuario = decodificado.id;
 
-        // Encriptar la nueva contraseña
         const salt = await bcrypt.genSalt(10);
         const passwordHashed = await bcrypt.hash(nuevaPassword, salt);
 
-        // Actualizar la base de datos Oracle
-        const sql = `UPDATE usuario SET password = :password WHERE id_usuario = :id`;
+        // Seguridad: Evitar que una cuenta eliminada actualice su contraseña hasta ser reactivada
+        const sql = `UPDATE usuario SET password = :password WHERE id_usuario = :id AND fecha_eliminacion_logica IS NULL`;
         const result = await execute(sql, { password: passwordHashed, id: idUsuario });
 
         if (result.rowsAffected === 0) {
-            return res.status(404).json({ error: 'Usuario no encontrado en el sistema.' });
+            return res.status(404).json({ error: 'Usuario no encontrado o la cuenta se encuentra desactivada.' });
         }
 
         res.status(200).json({ mensaje: '¡Contraseña actualizada correctamente! Ya puedes iniciar sesión.' });
