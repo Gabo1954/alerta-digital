@@ -5,9 +5,6 @@ import logo from '../assets/logo.png';
 const Registro = ({ onRegistroSuccess, irALogin }) => {
     const [form, setForm] = useState({ 
         nombre: '', 
-        ap_paterno: '', 
-        ap_materno: '', 
-        fecha_nacimiento: '', 
         celular: '', 
         correo: '', 
         password: '' 
@@ -31,37 +28,21 @@ const manejarRegistro = async (e) => {
         }
 
         // 2. Validar que todos los campos estén completos
-        if (!form.nombre.trim() || !form.ap_paterno.trim() || !form.ap_materno.trim() || !form.fecha_nacimiento || !form.celular.trim() || !form.correo.trim() || !form.password) {
+        if (!form.nombre.trim() || !form.celular.trim() || !form.correo.trim() || !form.password) {
             setError('Por favor, completa todos los campos del formulario.');
             return;
         }
 
-        // 3. Validar que nombre y apellidos solo contengan letras
+        // 3. Validar que nombre solo contenga letras
         const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]+$/;
         if (!regexLetras.test(form.nombre.trim())) {
             setError('El nombre solo debe contener letras.');
-            return;
-        }
-        if (!regexLetras.test(form.ap_paterno.trim())) {
-            setError('El apellido paterno solo debe contener letras.');
-            return;
-        }
-        if (!regexLetras.test(form.ap_materno.trim())) {
-            setError('El apellido materno solo debe contener letras.');
             return;
         }
 
         // 4. Validar longitud mínima de nombres
         if (form.nombre.trim().length < 2) {
             setError('El nombre debe tener al menos 2 caracteres.');
-            return;
-        }
-        if (form.ap_paterno.trim().length < 2) {
-            setError('El apellido paterno debe tener al menos 2 caracteres.');
-            return;
-        }
-        if (form.ap_materno.trim().length < 2) {
-            setError('El apellido materno debe tener al menos 2 caracteres.');
             return;
         }
 
@@ -72,40 +53,21 @@ const manejarRegistro = async (e) => {
             return;
         }
 
-        // 6. Validar fecha de nacimiento
-        const fechaNac = new Date(form.fecha_nacimiento);
-        const hoy = new Date();
-        const hace18Anos = new Date();
-        hace18Anos.setFullYear(hace18Anos.getFullYear() - 18);
-
-        if (isNaN(fechaNac.getTime())) {
-            setError('La fecha de nacimiento no es válida.');
-            return;
-        }
-        if (fechaNac > hoy) {
-            setError('La fecha de nacimiento no puede ser en el futuro.');
-            return;
-        }
-        if (fechaNac > hace18Anos) {
-            setError('Debes tener al menos 18 años para registrarte.');
-            return;
-        }
-
-        // 7. Validación de Celular (8-15 dígitos)
+        // 6. Validación de Celular (8-15 dígitos)
         const regexCelular = /^\d{8,15}$/;
         if (!regexCelular.test(form.celular.trim())) {
             setError('El celular debe contener entre 8 y 15 dígitos numéricos.');
             return;
         }
 
-        // 8. Validación de Contraseña Fuerte (Mínimo 8 caracteres, minúscula, mayúscula, número)
+        // 7. Validación de Contraseña Fuerte (Mínimo 8 caracteres, minúscula, mayúscula, número)
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
         if (!passwordRegex.test(form.password)) {
             setError('La contraseña debe tener: mínimo 8 caracteres, una mayúscula, una minúscula y un número.');
             return;
         }
 
-        // 9. Validación de Coincidencia de Contraseñas
+        // 8. Validación de Coincidencia de Contraseñas
         if (form.password !== confirmarPassword) {
             setError('Las contraseñas no coinciden. Por favor, verifícalas.');
             return;
@@ -117,9 +79,6 @@ const manejarRegistro = async (e) => {
         try {
             const datosAEnviar = {
                 nombre: form.nombre.trim(),
-                ap_paterno: form.ap_paterno.trim(),
-                ap_materno: form.ap_materno.trim(),
-                fecha_nacimiento: form.fecha_nacimiento,
                 correo: form.correo.trim().toLowerCase(),
                 celular: `${codigoPais}${form.celular.trim()}`,
                 password: form.password
@@ -167,19 +126,8 @@ const manejarRegistro = async (e) => {
                 <form onSubmit={manejarRegistro} className="space-y-4">
                     <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Nombre" onChange={(e) => setForm({...form, nombre: e.target.value})} required />
                     
-                    <div className="grid grid-cols-2 gap-3">
-                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Paterno" onChange={(e) => setForm({...form, ap_paterno: e.target.value})} required />
-                        <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Ap. Materno" onChange={(e) => setForm({...form, ap_materno: e.target.value})} required />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="relative">
-                            <label className="absolute -top-2 left-4 bg-gray-900 px-1 text-[9px] font-black text-blue-400 uppercase tracking-widest z-20">Nacimiento</label>
-                            <input type="date" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all [color-scheme:dark] text-sm outline-none" onChange={(e) => setForm({...form, fecha_nacimiento: e.target.value})} required />
-                        </div>
-                        
-                        {/* MODIFICADO: Código de país ahora usa w-2/5 (más grande) y celular w-3/5 */}
-                        <div className="flex gap-2">
+                    <div className="flex gap-3">
+                        <div className="flex gap-2 w-full">
                             <select 
                                 className="w-2/5 bg-black/50 border border-gray-700 text-white rounded-2xl px-2 py-4 focus:border-blue-500 transition-all text-sm outline-none appearance-none text-center cursor-pointer"
                                 value={codigoPais}

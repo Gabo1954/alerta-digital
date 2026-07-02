@@ -31,9 +31,6 @@ CREATE TABLE tipo_usuario (
 CREATE TABLE usuario (
     id_usuario NUMBER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre VARCHAR2(45),
-    ap_paterno VARCHAR2(45),
-    ap_materno VARCHAR2(45),
-    fecha_nacimiento DATE,
     correo VARCHAR2(45) UNIQUE,
     celular VARCHAR2(15) UNIQUE,
     password VARCHAR2(255), 
@@ -161,8 +158,8 @@ CREATE TABLE ia_diccionario (
 INSERT INTO tipo_usuario (nombre, descripcion) VALUES ('Usuario', 'Usuario normal');
 INSERT INTO tipo_usuario (nombre, descripcion) VALUES ('Administrador', 'Usuario con privilegios');
 
-INSERT INTO usuario (nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, password, es_vip, tipo_usuario_id_tipo_usuario)
-VALUES ('Gabriel', 'Tello', 'Fernandez', DATE '2000-05-10', 'tello953@gmail.com', '912345678', 'AUTH_GOOGLE', 1, 2);
+INSERT INTO usuario (nombre, correo, celular, password, es_vip, tipo_usuario_id_tipo_usuario)
+VALUES ('Gabriel', 'tello953@gmail.com', '912345678', 'AUTH_GOOGLE', 1, 2);
 
 INSERT INTO configuracion (mensajes, notificaciones, idioma, usuario_id_usuario) VALUES (1, 1, 'es', 1);
 

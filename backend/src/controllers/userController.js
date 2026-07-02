@@ -4,7 +4,7 @@ const { execute } = require('../config/db');
 exports.obtenerUsuarios = async (req, res) => {
     try {
         const sql = `
-            SELECT id_usuario, nombre, ap_paterno, ap_materno, correo, celular, tipo_usuario_id_tipo_usuario 
+            SELECT id_usuario, nombre, correo, celular, tipo_usuario_id_tipo_usuario 
             FROM usuario
             WHERE fecha_eliminacion_logica IS NULL
             ORDER BY id_usuario DESC
@@ -24,7 +24,7 @@ exports.obtenerUsuarioPorId = async (req, res) => {
 
     try {
         const sql = `
-            SELECT id_usuario, nombre, ap_paterno, ap_materno, correo, celular, tipo_usuario_id_tipo_usuario 
+            SELECT id_usuario, nombre, correo, celular, tipo_usuario_id_tipo_usuario 
             FROM usuario 
             WHERE id_usuario = :id AND fecha_eliminacion_logica IS NULL
         `;

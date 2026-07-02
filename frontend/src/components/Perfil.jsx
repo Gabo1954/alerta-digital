@@ -5,7 +5,7 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const inicial = usuario?.nombre ? usuario.nombre.charAt(0).toUpperCase() : 'U';
-    const nombreCompleto = `${usuario?.nombre || 'Usuario'} ${usuario?.ap_paterno || ''}`;
+    const nombreCompleto = `${usuario?.nombre || 'Usuario'}`;
 
     const handleEliminarCuenta = async () => {
         setIsDeleting(true);

@@ -10,43 +10,29 @@ const nodemailer = require('nodemailer');
 // ==========================================
 exports.registrarUsuario = async (req, res) => {
     // El backend recibe 'celular' ya con el prefijo
-    const { nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, password } = req.body;
+    const { nombre, correo, celular, password } = req.body;
 
     // ===== VALIDACIONES =====
     
     // 1. Validar campos obligatorios
-    if (!nombre || !ap_paterno || !ap_materno || !fecha_nacimiento || !correo || !celular || !password) {
+    if (!nombre || !correo || !celular || !password) {
         return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
 
     // 2. Trim de espacios
     const nombreTrim = nombre.trim();
-    const apPatTrim = ap_paterno.trim();
-    const apMatTrim = ap_materno.trim();
     const correoTrim = correo.trim().toLowerCase();
     const celularTrim = celular.trim();
 
-    // 3. Validar que nombre, apellidos solo contengan letras
+    // 3. Validar que nombre solo contenga letras
     const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]+$/;
     if (!regexLetras.test(nombreTrim)) {
         return res.status(400).json({ error: 'El nombre solo debe contener letras' });
-    }
-    if (!regexLetras.test(apPatTrim)) {
-        return res.status(400).json({ error: 'El apellido paterno solo debe contener letras' });
-    }
-    if (!regexLetras.test(apMatTrim)) {
-        return res.status(400).json({ error: 'El apellido materno solo debe contener letras' });
     }
 
     // 4. Validar longitud mínima de nombres
     if (nombreTrim.length < 2) {
         return res.status(400).json({ error: 'El nombre debe tener al menos 2 caracteres' });
-    }
-    if (apPatTrim.length < 2) {
-        return res.status(400).json({ error: 'El apellido paterno debe tener al menos 2 caracteres' });
-    }
-    if (apMatTrim.length < 2) {
-        return res.status(400).json({ error: 'El apellido materno debe tener al menos 2 caracteres' });
     }
 
     // 5. Validar formato de email
@@ -61,23 +47,7 @@ exports.registrarUsuario = async (req, res) => {
         return res.status(400).json({ error: 'El celular debe contener entre 8 y 15 dígitos' });
     }
 
-    // 7. Validar fecha de nacimiento
-    const fechaNac = new Date(fecha_nacimiento);
-    const hoy = new Date();
-    const hace18Anos = new Date();
-    hace18Anos.setFullYear(hace18Anos.getFullYear() - 18);
-    
-    if (isNaN(fechaNac.getTime())) {
-        return res.status(400).json({ error: 'La fecha de nacimiento no es válida' });
-    }
-    if (fechaNac > hoy) {
-        return res.status(400).json({ error: 'La fecha de nacimiento no puede ser en el futuro' });
-    }
-    if (fechaNac > hace18Anos) {
-        return res.status(400).json({ error: 'Debes tener al menos 18 años para registrarte' });
-    }
-
-    // 8. Validar fortaleza de contraseña
+    // 7. Validar fortaleza de contraseña
     const regexPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
     if (!regexPassword.test(password)) {
         return res.status(400).json({ 
@@ -92,17 +62,14 @@ exports.registrarUsuario = async (req, res) => {
 
         const sql = `
             INSERT INTO usuario (
-                nombre, ap_paterno, ap_materno, fecha_nacimiento, correo, celular, password, es_vip, tipo_usuario_id_tipo_usuario
+                nombre, correo, celular, password, es_vip, tipo_usuario_id_tipo_usuario
             ) VALUES (
-                :nombre, :ap_paterno, :ap_materno, TO_DATE(:fecha_nacimiento, 'YYYY/MM/DD'), :correo, :celular, :password, 0, :tipo_usuario
+                :nombre, :correo, :celular, :password, 0, :tipo_usuario
             ) RETURNING id_usuario INTO :out_id
         `;
 
         const binds = {
             nombre: nombreTrim,
-            ap_paterno: apPatTrim,
-            ap_materno: apMatTrim,
-            fecha_nacimiento: fecha_nacimiento,
             correo: correoTrim,
             celular: celularTrim,
             password: passwordHashed,
@@ -152,7 +119,7 @@ exports.loginUsuario = async (req, res) => {
     try {
         // Se añade fecha_eliminacion_logica a la consulta
         const sql = `
-            SELECT id_usuario, nombre, ap_paterno, correo, password, es_vip, tipo_usuario_id_tipo_usuario, fecha_eliminacion_logica 
+            SELECT id_usuario, nombre, correo, password, es_vip, tipo_usuario_id_tipo_usuario, fecha_eliminacion_logica 
             FROM usuario 
             WHERE correo = :correo
         `;
@@ -165,12 +132,12 @@ exports.loginUsuario = async (req, res) => {
         const usuario = result.rows[0];
         
         // Manejador seguro para el formato de salida de Oracle (Arreglo u Objeto)
-        const passwordDB = usuario.PASSWORD !== undefined ? usuario.PASSWORD : usuario[4];
+        const passwordDB = usuario.PASSWORD !== undefined ? usuario.PASSWORD : usuario[3];
         const idUsuario = usuario.ID_USUARIO !== undefined ? usuario.ID_USUARIO : usuario[0];
         const nombreUsr = usuario.NOMBRE !== undefined ? usuario.NOMBRE : usuario[1];
-        const rolUsr = usuario.TIPO_USUARIO_ID_TIPO_USUARIO !== undefined ? usuario.TIPO_USUARIO_ID_TIPO_USUARIO : usuario[6];
-        const esVip = usuario.ES_VIP !== undefined ? usuario.ES_VIP : usuario[5];
-        const fechaEliminacion = usuario.FECHA_ELIMINACION_LOGICA !== undefined ? usuario.FECHA_ELIMINACION_LOGICA : usuario[7];
+        const rolUsr = usuario.TIPO_USUARIO_ID_TIPO_USUARIO !== undefined ? usuario.TIPO_USUARIO_ID_TIPO_USUARIO : usuario[5];
+        const esVip = usuario.ES_VIP !== undefined ? usuario.ES_VIP : usuario[4];
+        const fechaEliminacion = usuario.FECHA_ELIMINACION_LOGICA !== undefined ? usuario.FECHA_ELIMINACION_LOGICA : usuario[6];
 
         const passwordValido = await bcrypt.compare(password, passwordDB);
         if (!passwordValido) {
