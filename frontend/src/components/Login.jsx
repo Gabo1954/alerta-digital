@@ -123,15 +123,36 @@ const Login = ({ onLoginSuccess, irARegistro }) => {
                                 </button>
                             </div>
 
-                            <button type="submit" disabled={cargando} className="w-full font-black py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all active:scale-95 uppercase tracking-wider flex justify-center items-center gap-2 mt-2">
-                                {cargando ? <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span> : 'INGRESAR'}
+                            <button 
+                                type="submit" 
+                                disabled={cargando} 
+                                className="group relative w-full font-black py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_35px_rgba(37,99,235,0.6)] transition-all duration-300 active:scale-[0.97] uppercase tracking-wider flex justify-center items-center gap-2 mt-2 overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
+                                {/* Fondo de onda expansiva al hacer hover */}
+                                <span className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-white/10 to-blue-500/0 opacity-0 group-hover:opacity-100 group-hover:translate-x-full transition-all duration-700 ease-in-out"></span>
+                                
+                                {cargando ? (
+                                    <span className="flex items-center gap-3">
+                                        <span className="relative w-5 h-5">
+                                            <span className="absolute inset-0 border-2 border-white/30 rounded-full animate-ping"></span>
+                                            <span className="absolute inset-0 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                        </span>
+                                        <span className="animate-pulse">INGRESANDO</span>
+                                    </span>
+                                ) : (
+                                    <>
+                                        <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
+                                        <span>INGRESAR</span>
+                                    </>
+                                )}
                             </button>
                         </form>
 
                         {/* NUEVO: Botón para ir a Recuperar */}
                         <div className="mt-4 text-center">
-                            <button type="button" onClick={() => { setVistaRecuperar(true); setError(''); setMensaje(''); }} className="text-gray-300 text-sm font-medium hover:text-white transition-colors">
-                                ¿Olvidaste tu contraseña?
+                            <button type="button" onClick={() => { setVistaRecuperar(true); setError(''); setMensaje(''); }} className="group text-gray-300 text-sm font-medium hover:text-white transition-all duration-300 flex items-center justify-center gap-1.5 mx-auto">
+                                <svg className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                <span>¿Olvidaste tu contraseña?</span>
                             </button>
                         </div>
 
@@ -148,7 +169,7 @@ const Login = ({ onLoginSuccess, irARegistro }) => {
 
                         <div className="mt-8 text-center border-t border-gray-800 pt-6">
                             <p className="text-gray-300 text-sm font-medium">
-                                ¿No tienes cuenta? <button type="button" onClick={irARegistro} className="text-blue-400 font-bold hover:text-blue-300 transition-colors">Regístrate gratis</button>
+                                ¿No tienes cuenta? <button type="button" onClick={irARegistro} className="text-blue-400 font-bold hover:text-blue-300 transition-all duration-300 hover:underline underline-offset-4 decoration-blue-400/50 hover:scale-105 inline-block">Regístrate gratis</button>
                             </p>
                         </div>
                     </>
@@ -159,13 +180,33 @@ const Login = ({ onLoginSuccess, irARegistro }) => {
                         
                         <input type="email" className="w-full bg-gray-800 border border-gray-600 text-white rounded-2xl px-5 py-4 focus:border-blue-500 outline-none text-sm placeholder:text-gray-300" placeholder="Correo electrónico" value={correo} onChange={(e) => setCorreo(e.target.value)} required disabled={cargando} />
                         
-                        <button type="submit" disabled={cargando} className="w-full font-black py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all active:scale-95 uppercase mt-2">
-                            {cargando ? 'Enviando...' : 'ENVIAR CORREO'}
+                        <button 
+                            type="submit" 
+                            disabled={cargando} 
+                            className="group relative w-full font-black py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:shadow-[0_0_35px_rgba(37,99,235,0.6)] transition-all duration-300 active:scale-[0.97] uppercase mt-2 overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            <span className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-white/10 to-blue-500/0 opacity-0 group-hover:opacity-100 group-hover:translate-x-full transition-all duration-700 ease-in-out"></span>
+                            
+                            {cargando ? (
+                                <span className="flex items-center justify-center gap-3">
+                                    <span className="relative w-5 h-5">
+                                        <span className="absolute inset-0 border-2 border-white/30 rounded-full animate-ping"></span>
+                                        <span className="absolute inset-0 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                    </span>
+                                    <span className="animate-pulse">ENVIANDO</span>
+                                </span>
+                            ) : (
+                                <>
+                                    <svg className="w-4 h-4 inline-block mr-2 group-hover:animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                                    ENVIAR CORREO
+                                </>
+                            )}
                         </button>
                         
                         <div className="mt-4 text-center">
-                            <button type="button" onClick={() => { setVistaRecuperar(false); setError(''); setMensaje(''); }} className="text-gray-400 text-sm font-medium hover:text-white transition-colors">
-                                ← Volver al Login
+                            <button type="button" onClick={() => { setVistaRecuperar(false); setError(''); setMensaje(''); }} className="group text-gray-400 text-sm font-medium hover:text-white transition-all duration-300 flex items-center justify-center gap-1 mx-auto">
+                                <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                                <span>Volver al Login</span>
                             </button>
                         </div>
                     </form>

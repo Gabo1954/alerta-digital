@@ -168,8 +168,33 @@ const manejarRegistro = async (e) => {
                         </label>
                     </div>
 
-                    <button type="submit" disabled={cargando || !aceptaTerminos} className="w-full font-black py-5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] active:scale-95 transition-all uppercase tracking-widest disabled:opacity-30 disabled:grayscale mt-4 text-xs">
-                        {cargando ? <span className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin"></span> : 'CREAR MI ESCUDO DIGITAL'}
+                    <button 
+                        type="submit" 
+                        disabled={cargando || !aceptaTerminos} 
+                        className="group relative w-full font-black py-5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_40px_rgba(37,99,235,0.5)] active:scale-[0.97] transition-all duration-300 uppercase tracking-widest mt-4 text-xs overflow-hidden disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
+                    >
+                        {/* Efecto de barrido hover */}
+                        <span className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-white/10 to-blue-500/0 opacity-0 group-hover:opacity-100 group-hover:translate-x-full transition-all duration-700 ease-in-out"></span>
+                        
+                        {/* Efecto de brillo pulsante cuando está habilitado */}
+                        {!cargando && aceptaTerminos && (
+                            <span className="absolute inset-0 bg-blue-400/5 animate-pulse rounded-2xl"></span>
+                        )}
+                        
+                        {cargando ? (
+                            <span className="relative z-10 flex items-center justify-center gap-3">
+                                <span className="relative w-6 h-6">
+                                    <span className="absolute inset-0 border-2 border-white/30 rounded-full animate-ping"></span>
+                                    <span className="absolute inset-0 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                                </span>
+                                <span className="animate-pulse tracking-wider">CREANDO ESCUDO</span>
+                            </span>
+                        ) : (
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                                <span>CREAR MI ESCUDO DIGITAL</span>
+                            </span>
+                        )}
                     </button>
                 </form>
             </div>
