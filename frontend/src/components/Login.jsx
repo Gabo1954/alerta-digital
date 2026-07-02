@@ -41,11 +41,24 @@ const Login = ({ onLoginSuccess, irARegistro }) => {
         setError('');
         setMensaje('');
         setCargando(true);
+        
+        // Timeout de 15 segundos para evitar que se quede colgado
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
         try {
-            const respuesta = await api.post('/auth/recuperar-password', { correo });
+            const respuesta = await api.post('/auth/recuperar-password', { correo }, {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
             setMensaje(respuesta.data.mensaje || 'Se ha enviado un correo con las instrucciones.');
         } catch (err) {
-            setError(err.response?.data?.error || 'Error al solicitar la recuperación.');
+            clearTimeout(timeoutId);
+            if (err.name === 'CanceledError' || err.code === 'ERR_CANCELED') {
+                setError('El servidor no respondió. Verifica que el correo esté registrado o intenta más tarde.');
+            } else {
+                setError(err.response?.data?.error || 'Error al solicitar la recuperación.');
+            }
         } finally {
             setCargando(false);
         }
