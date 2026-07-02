@@ -7,6 +7,9 @@ const Historial = ({ setTabActiva }) => {
     const [error, setError] = useState('');
     const [filtro, setFiltro] = useState('');
     const [filtroRiesgo, setFiltroRiesgo] = useState('');
+    const [paginaActual, setPaginaActual] = useState(1);
+    const ITEMS_POR_PAGINA = 1; // Solo 1 escaneo por página
+    const [animandoPagina, setAnimandoPagina] = useState(false);
 
     // ESTADO: Para el mensaje seleccionado
     const [mensajeDetalle, setMensajeDetalle] = useState(null);
@@ -105,6 +108,19 @@ const Historial = ({ setTabActiva }) => {
         return coincideTexto && coincideRiesgo;
     });
 
+    // Paginación: solo 1 por página
+    const totalPaginas = Math.max(1, Math.ceil(datosFiltrados.length / ITEMS_POR_PAGINA));
+    const paginaSegura = Math.min(paginaActual, totalPaginas);
+    const inicio = (paginaSegura - 1) * ITEMS_POR_PAGINA;
+    const datosPaginados = datosFiltrados.slice(inicio, inicio + ITEMS_POR_PAGINA);
+
+    const cambiarPagina = (nuevaPagina) => {
+        if (nuevaPagina < 1 || nuevaPagina > totalPaginas || animandoPagina) return;
+        setAnimandoPagina(true);
+        setPaginaActual(nuevaPagina);
+        setTimeout(() => setAnimandoPagina(false), 300);
+    };
+
     return (
         <div className="w-full bg-gray-950 font-sans animate-fade-in shrink-0">
             
@@ -178,7 +194,7 @@ const Historial = ({ setTabActiva }) => {
                             <div key={i} className="h-28 rounded-3xl bg-gray-900/50 animate-pulse border border-white/5 shadow-sm"></div>
                         ))}
                     </div>
-                ) : datosFiltrados.length === 0 ? (
+                ) : datosPaginados.length === 0 ? (
                     <div className="text-center py-20 bg-gray-900/30 rounded-[2.5rem] border border-white/5 border-dashed mt-6">
                         <div className="text-5xl block mb-4 opacity-30">🗂️</div>
                         <p className="text-gray-400 font-bold text-sm tracking-widest uppercase">
@@ -186,8 +202,18 @@ const Historial = ({ setTabActiva }) => {
                         </p>
                     </div>
                 ) : (
-                    <div className="space-y-3">
-                        {datosFiltrados.map((item, index) => {
+                    <>
+                    {/* Indicador de página */}
+                    {totalPaginas > 1 && (
+                        <div className="flex items-center justify-center gap-3 mb-4">
+                            <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest">
+                                Escaneo {paginaSegura} de {totalPaginas}
+                            </span>
+                        </div>
+                    )}
+                    
+                    <div className={`space-y-3 transition-all duration-300 ${animandoPagina ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+                        {datosPaginados.map((item, index) => {
                             const esPeligroso = item.riesgo === 'Alto' || item.riesgo === 'Medio';
                             return (
                                 <div 
@@ -213,6 +239,61 @@ const Historial = ({ setTabActiva }) => {
                             );
                         })}
                     </div>
+
+                    {/* PAGINACIÓN */}
+                    {totalPaginas > 1 && (
+                        <div className="flex items-center justify-center gap-3 mt-6 pb-8">
+                            <button
+                                onClick={() => cambiarPagina(paginaSegura - 1)}
+                                disabled={paginaSegura <= 1}
+                                className="bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white p-3 rounded-2xl transition-all active:scale-90 border border-white/5"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+
+                            {/* Números de página (solo mostrar un rango corto) */}
+                            <div className="flex gap-1.5">
+                                {Array.from({ length: Math.min(totalPaginas, 7) }, (_, i) => {
+                                    let numPagina;
+                                    if (totalPaginas <= 7) {
+                                        numPagina = i + 1;
+                                    } else {
+                                        const mitad = Math.floor(7 / 2);
+                                        if (paginaSegura <= mitad + 1) {
+                                            numPagina = i + 1;
+                                        } else if (paginaSegura >= totalPaginas - mitad) {
+                                            numPagina = totalPaginas - 6 + i;
+                                        } else {
+                                            numPagina = paginaSegura - mitad + i;
+                                        }
+                                    }
+                                    return (
+                                        <button
+                                            key={numPagina}
+                                            onClick={() => cambiarPagina(numPagina)}
+                                            disabled={animandoPagina}
+                                            className={`w-10 h-10 rounded-xl font-black text-xs transition-all active:scale-90 border ${
+                                                paginaSegura === numPagina
+                                                    ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/30 scale-110'
+                                                    : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-blue-500/50 hover:text-white'
+                                            }`}
+                                        >
+                                            {numPagina}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <button
+                                onClick={() => cambiarPagina(paginaSegura + 1)}
+                                disabled={paginaSegura >= totalPaginas}
+                                className="bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-white p-3 rounded-2xl transition-all active:scale-90 border border-white/5"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                        </div>
+                    )}
+                    </>
                 )}
             </div>
             
