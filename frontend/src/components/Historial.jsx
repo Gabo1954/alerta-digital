@@ -8,7 +8,7 @@ const Historial = ({ setTabActiva }) => {
     const [filtro, setFiltro] = useState('');
     const [filtroRiesgo, setFiltroRiesgo] = useState('');
     const [paginaActual, setPaginaActual] = useState(1);
-    const ITEMS_POR_PAGINA = 1; // Solo 1 escaneo por página
+    const ITEMS_POR_PAGINA = 10; // 10 escaneos por página
     const [animandoPagina, setAnimandoPagina] = useState(false);
 
     // ESTADO: Para el mensaje seleccionado
