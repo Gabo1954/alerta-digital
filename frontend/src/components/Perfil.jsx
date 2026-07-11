@@ -1,18 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Preferences } from '@capacitor/preferences'; // IMPORTACIÓN DEL PUENTE NATIVO
 
 const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
     const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    
+    // NUEVO ESTADO: Controla el interruptor del escáner en segundo plano
+    const [smsActivo, setSmsActivo] = useState(true);
 
     const inicial = usuario?.nombre ? usuario.nombre.charAt(0).toUpperCase() : 'U';
-    const nombreCompleto = `${usuario?.nombre || 'Usuario'}`;
+    const nombreCompleto = `${usuario?.nombre || 'Usuario'} ${usuario?.ap_paterno || ''}`;
+
+    // CARGAR EL ESTADO NATIVO AL ABRIR EL PERFIL
+    useEffect(() => {
+        const cargarPreferencia = async () => {
+            const { value } = await Preferences.get({ key: 'consentimiento_sms' });
+            // Por defecto es true a menos que explícitamente se haya guardado 'false'
+            setSmsActivo(value !== 'false');
+        };
+        cargarPreferencia();
+    }, []);
+
+    // FUNCIÓN DEL INTERRUPTOR (DERECHO DE OPOSICIÓN)
+    const toggleSms = async () => {
+        const nuevoEstado = !smsActivo;
+        setSmsActivo(nuevoEstado);
+        
+        // Guardamos en el almacenamiento nativo de Android para que el SmsReceiver lo lea
+        await Preferences.set({ key: 'consentimiento_sms', value: nuevoEstado.toString() });
+        
+        // Retroalimentación visual solicitada en los Criterios de Aceptación
+        if (nuevoEstado) {
+            alert("✅ Protección activada. Tus SMS volverán a ser analizados.");
+        } else {
+            alert("🚨 Protección desactivada. La intercepción de SMS se ha detenido inmediatamente.");
+        }
+    };
 
     const handleEliminarCuenta = async () => {
         setIsDeleting(true);
         try {
-            const token = localStorage.getItem('token'); // Asegúrate de que así guardas tu token
+            const token = localStorage.getItem('token'); 
             
-            // Reemplaza la URL base si usas una variable de entorno como import.meta.env.VITE_API_URL
             const response = await fetch('https://alerta-digital.onrender.com/api/usuarios/eliminar-cuenta', {
                 method: 'POST',
                 headers: {
@@ -24,7 +53,6 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
             const data = await response.json();
 
             if (response.ok) {
-                // Notificamos al usuario y lo desconectamos
                 alert(data.mensaje); 
                 onLogout();
             } else {
@@ -40,7 +68,7 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
     };
 
     return (
-        <div className="flex-1 w-full px-5 pt-6 pb-20 animate-fade-in-up font-sans relative">
+        <div className="flex-1 w-full px-5 pt-6 pb-20 animate-fade-in-up font-sans relative overflow-y-auto custom-scrollbar">
 
             {/* ENCABEZADO */}
             <header className="mb-8 flex flex-col items-center text-center">
@@ -85,31 +113,64 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
                 </div>
             </div>
 
-            {/* OPCIONES DE SEGURIDAD */}
-            <div className="space-y-4 mb-10">
-                <button onClick={() => setTabActiva('historial')} className="w-full bg-gray-900 hover:bg-gray-800 p-5 rounded-3xl border border-white/5 flex items-center justify-between transition-all active:scale-[0.98] group">
-                    <div className="flex items-center gap-4">
-                        <div className="w-11 h-11 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all shadow-sm">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+            {/* SECCIÓN: PRIVACIDAD Y DATOS (Cumplimiento Historia de Usuario) */}
+            <div className="mb-8">
+                <h3 className="text-gray-500 font-black uppercase tracking-widest text-xs mb-3 pl-2">Privacidad y Datos</h3>
+                <div className="bg-gray-900 p-5 rounded-3xl border border-white/5 flex flex-col gap-4 shadow-lg">
+                    
+                    {/* Toggle de Intercepción SMS */}
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <p className="text-white font-bold text-sm">Análisis de SMS</p>
+                            <p className="text-gray-500 text-[10px] uppercase tracking-widest mt-1">Protección en segundo plano</p>
                         </div>
-                        <span className="text-white font-bold text-sm">Historial de Escaneos</span>
+                        <button 
+                            onClick={toggleSms} 
+                            className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ease-in-out relative ${smsActivo ? 'bg-blue-600' : 'bg-gray-700'}`}
+                        >
+                            <div className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 ease-in-out ${smsActivo ? 'translate-x-6' : 'translate-x-0'}`} />
+                        </button>
                     </div>
-                    <svg className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                </button>
 
-                <div className="bg-gray-900/40 p-5 rounded-3xl border border-dashed border-white/10 flex flex-col gap-2">
-                    <div className="flex items-center gap-2 text-emerald-500">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
-                        <span className="text-[10px] font-black uppercase tracking-widest">Privacidad SSL</span>
+                    {/* Botón de Política de Privacidad */}
+                    <button onClick={() => setTabActiva('politica')} className="flex justify-between items-center border-t border-white/5 pt-4 group text-left">
+                        <div>
+                            <p className="text-gray-300 font-bold text-sm group-hover:text-blue-400 transition-colors">Política de Privacidad</p>
+                            <p className="text-gray-600 text-[10px] uppercase tracking-widest mt-1">Responsables y derechos legales</p>
+                        </div>
+                        <svg className="w-5 h-5 text-gray-600 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            {/* SECCIÓN: HERRAMIENTAS Y SEGURIDAD */}
+            <div className="mb-10">
+                <h3 className="text-gray-500 font-black uppercase tracking-widest text-xs mb-3 pl-2">Herramientas</h3>
+                <div className="space-y-4">
+                    <button onClick={() => setTabActiva('historial')} className="w-full bg-gray-900 hover:bg-gray-800 p-5 rounded-3xl border border-white/5 flex items-center justify-between transition-all active:scale-[0.98] group">
+                        <div className="flex items-center gap-4">
+                            <div className="w-11 h-11 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all shadow-sm">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                            </div>
+                            <span className="text-white font-bold text-sm">Historial de Escaneos</span>
+                        </div>
+                        <svg className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </button>
+
+                    <div className="bg-gray-900/40 p-5 rounded-3xl border border-dashed border-white/10 flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-emerald-500">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                            <span className="text-[10px] font-black uppercase tracking-widest">Privacidad SSL</span>
+                        </div>
+                        <p className="text-gray-500 text-[11px] font-medium leading-relaxed italic">
+                            Tus mensajes analizados se procesan bajo encriptación bancaria y son eliminados tras 30 días.
+                        </p>
                     </div>
-                    <p className="text-gray-500 text-[11px] font-medium leading-relaxed italic">
-                        Tus mensajes analizados se procesan bajo encriptación bancaria y son eliminados tras 30 días.
-                    </p>
                 </div>
             </div>
 
             {/* ZONA DE PELIGRO Y DESCONEXIÓN */}
-            <div className="space-y-4">
+            <div className="space-y-4 mb-6">
                 <button
                     onClick={onLogout}
                     className="w-full bg-gray-800 hover:bg-gray-700 text-white font-black py-5 rounded-[2rem] transition-all duration-300 shadow-lg flex justify-center items-center gap-3 text-sm active:scale-95 uppercase tracking-widest"

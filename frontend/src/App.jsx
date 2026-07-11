@@ -9,7 +9,8 @@ import Suscripcion from './components/Suscripcion';
 import PagoResultado from './components/PagoResultado';
 import Perfil from './components/Perfil';
 import RestablecerPassword from './components/RestablecerPassword';
-import OnboardingConsent from './components/OnboardingConsent'; // NUEVO IMPORT LEGAL
+import OnboardingConsent from './components/OnboardingConsent';
+import PoliticaPrivacidad from './components/PoliticaPrivacidad'; // <-- IMPORT LEGAL AÑADIDO
 import logo from './assets/logo.png';
 
 function App() {
@@ -18,7 +19,6 @@ function App() {
   const [isPremium, setIsPremium] = useState(false);
   const [vistaAuth, setVistaAuth] = useState('login');
   
-  // NUEVO ESTADO: Controla si el usuario ya pasó la barrera legal
   const [consentimientoValidado, setConsentimientoValidado] = useState(false);
 
   const path = window.location.pathname;
@@ -53,7 +53,7 @@ function App() {
       setUsuario(null);
       setIsPremium(false);
       setTabActiva('inicio');
-      setConsentimientoValidado(false); // Reseteamos el estado legal al salir
+      setConsentimientoValidado(false); 
       window.location.href = '/';
     }
   };
@@ -61,19 +61,16 @@ function App() {
   if (path === '/pago-resultado') return <PagoResultado />;
   if (path === '/restablecer-password') return <RestablecerPassword />;
 
-  // Si no hay usuario logueado, mostramos Login o Registro
   if (!usuario) {
     return vistaAuth === 'login'
       ? <Login onLoginSuccess={manejarAuthSuccess} irARegistro={() => setVistaAuth('registro')} />
       : <Registro onRegistroSuccess={manejarAuthSuccess} irALogin={() => setVistaAuth('login')} />;
   }
 
-  // Si hay usuario, pero NO ha validado el consentimiento, mostramos el modal a pantalla completa
   if (!consentimientoValidado) {
     return <OnboardingConsent onConsentido={() => setConsentimientoValidado(true)} />;
   }
 
-  // Si hay usuario y YA validó el consentimiento, renderizamos la app normal
   return (
     <div className="h-dvh w-full bg-black flex justify-center selection:bg-blue-500 selection:text-white">
       <div className="w-full max-w-md bg-gray-950 h-full relative flex flex-col overflow-hidden shadow-2xl">
@@ -92,7 +89,7 @@ function App() {
             </button>
 
             <div className="flex items-center gap-3">
-              <button onClick={() => setTabActiva('perfil')} className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all active:scale-90 overflow-hidden font-black text-xs ${tabActiva === 'perfil' ? 'bg-blue-600 text-white border-blue-400' : 'bg-white/5 text-gray-400 border-white/10'}`}>
+              <button onClick={() => setTabActiva('perfil')} className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all active:scale-90 overflow-hidden font-black text-xs ${tabActiva === 'perfil' || tabActiva === 'politica' ? 'bg-blue-600 text-white border-blue-400' : 'bg-white/5 text-gray-400 border-white/10'}`}>
                 {usuario.nombre?.charAt(0).toUpperCase()}
               </button>
               <button onClick={salir} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90 shrink-0 border border-white/5">
@@ -107,13 +104,16 @@ function App() {
         <main className="flex-1 overflow-y-auto no-scrollbar pb-28 pt-2 relative scroll-smooth bg-gray-950">
           {isPremium && <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-96 bg-yellow-500/5 blur-[120px] pointer-events-none"></div>}
           
-          {/* TODOS los tabs siempre montados, solo ocultos con CSS */}
           <div className={tabActiva === 'inicio' ? 'block' : 'hidden'}><Analizador isPremium={isPremium} setTabActiva={setTabActiva} /></div>
           <div className={tabActiva === 'historial' ? 'block' : 'hidden'}><Historial setTabActiva={setTabActiva} /></div>
           <div className={tabActiva === 'aprender' ? 'block' : 'hidden'}><Educacion usuario={usuario} isPremium={isPremium} setTabActiva={setTabActiva} /></div>
           <div className={tabActiva === 'ayuda' ? 'block' : 'hidden'}><Contactos /></div>
           <div className={tabActiva === 'pro' ? 'block' : 'hidden'}><Suscripcion isPremium={isPremium} setIsPremium={setIsPremium} setTabActiva={setTabActiva} /></div>
           <div className={tabActiva === 'perfil' ? 'block' : 'hidden'}><Perfil usuario={usuario} isPremium={isPremium} setTabActiva={setTabActiva} onLogout={salir} /></div>
+          
+          {/* <-- COMPONENTE LEGAL AÑADIDO --> */}
+          <div className={tabActiva === 'politica' ? 'block' : 'hidden'}><PoliticaPrivacidad setTabActiva={setTabActiva} /></div>
+          
         </main>
 
         <nav className="bg-gray-950/95 backdrop-blur-2xl border-t border-white/5 absolute bottom-0 w-full flex justify-around px-2 pt-2 pb-safe z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
@@ -129,8 +129,8 @@ function App() {
 }
 
 const NavBtn = memo(({ id, label, icon, active, set, gold }) => (
-  <button onClick={() => set(id)} className={`flex flex-col items-center justify-center w-16 mb-2 transition-all active:scale-75 ${active === id ? (gold ? 'text-yellow-400' : 'text-blue-500') : 'text-gray-500'}`}>
-    <svg className={`w-7 h-7 mb-1 transition-transform ${active === id ? 'scale-110 drop-shadow-[0_0_8px_currentColor]' : ''}`} fill={active === id ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={active === id ? 0 : 2} viewBox="0 0 24 24">
+  <button onClick={() => set(id)} className={`flex flex-col items-center justify-center w-16 mb-2 transition-all active:scale-75 ${active === id || (active === 'politica' && id === 'perfil') ? (gold ? 'text-yellow-400' : 'text-blue-500') : 'text-gray-500'}`}>
+    <svg className={`w-7 h-7 mb-1 transition-transform ${active === id || (active === 'politica' && id === 'perfil') ? 'scale-110 drop-shadow-[0_0_8px_currentColor]' : ''}`} fill={active === id || (active === 'politica' && id === 'perfil') ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={active === id || (active === 'politica' && id === 'perfil') ? 0 : 2} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
     </svg>
     <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
