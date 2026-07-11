@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import api from '../services/api';
-import logo from '../assets/logo.png';
 
 const Registro = ({ onRegistroSuccess, irALogin }) => {
     const [form, setForm] = useState({ 
@@ -18,233 +17,258 @@ const Registro = ({ onRegistroSuccess, irALogin }) => {
     const [aceptaTerminos, setAceptaTerminos] = useState(false);
     const [verModal, setVerModal] = useState(false);
 
-const manejarRegistro = async (e) => {
+    const manejarInput = (e) => {
+        const { name, value } = e.target;
+        setForm({ ...form, [name]: value });
+    };
+
+    const manejarRegistro = async (e) => {
         e.preventDefault();
+        setError('');
         
-        // 1. Validación de Términos
+        // 1. Validación de Términos Legales
         if (!aceptaTerminos) {
-            setError('Para registrarse, debe aceptar las políticas de privacidad y protección de datos.');
+            setError('Para registrarse, debe leer y aceptar las políticas de privacidad bajo la Ley 21.719.');
             return;
         }
 
-        // 2. Validar que todos los campos estén completos
+        // 2. Validar campos obligatorios
         if (!form.nombre.trim() || !form.celular.trim() || !form.correo.trim() || !form.password) {
             setError('Por favor, completa todos los campos del formulario.');
             return;
         }
 
-        // 3. Validar que nombre solo contenga letras
-        const regexLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s'-]+$/;
-        if (!regexLetras.test(form.nombre.trim())) {
-            setError('El nombre solo debe contener letras.');
-            return;
-        }
-
-        // 4. Validar longitud mínima de nombres
-        if (form.nombre.trim().length < 2) {
-            setError('El nombre debe tener al menos 2 caracteres.');
-            return;
-        }
-
-        // 5. Validar formato de email
-        const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!regexEmail.test(form.correo.trim())) {
-            setError('Por favor, ingresa un correo electrónico válido.');
-            return;
-        }
-
-        // 6. Validación de Celular (8-15 dígitos)
-        const regexCelular = /^\d{8,15}$/;
-        if (!regexCelular.test(form.celular.trim())) {
-            setError('El celular debe contener entre 8 y 15 dígitos numéricos.');
-            return;
-        }
-
-        // 7. Validación de Contraseña Fuerte (Mínimo 8 caracteres, minúscula, mayúscula, número)
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-        if (!passwordRegex.test(form.password)) {
-            setError('La contraseña debe tener: mínimo 8 caracteres, una mayúscula, una minúscula y un número.');
-            return;
-        }
-
-        // 8. Validación de Coincidencia de Contraseñas
+        // 3. Validar contraseñas
         if (form.password !== confirmarPassword) {
-            setError('Las contraseñas no coinciden. Por favor, verifícalas.');
+            setError('Las contraseñas ingresadas no coinciden.');
             return;
         }
 
-        setError(''); 
         setCargando(true);
-        
-        try {
-            const datosAEnviar = {
-                nombre: form.nombre.trim(),
-                correo: form.correo.trim().toLowerCase(),
-                celular: `${codigoPais}${form.celular.trim()}`,
-                password: form.password
-            };
 
-            const respuesta = await api.post('/auth/registro', datosAEnviar);
-            localStorage.setItem('token', respuesta.data.token);
-            localStorage.setItem('usuario', JSON.stringify(respuesta.data.usuario));
+        try {
+            const celularCompleto = `${codigoPais}${form.celular.trim()}`;
             
-            localStorage.removeItem('isPro'); 
-            
-            onRegistroSuccess(respuesta.data.usuario);
+            // Envío de payload estructurado para el controlador de autenticación de Oracle Cloud
+            const respuesta = await api.post('/auth/registro', {
+                nombre: form.nombre.trim(),
+                ap_paterno: 'Pendiente', // Valores de compatibilidad con el esquema de la BD
+                ap_materno: 'Pendiente',
+                fecha_nacimiento: '2000-01-01', 
+                correo: form.correo.trim().toLowerCase(),
+                celular: celularCompleto,
+                password: form.password
+            });
+
+            if (respuesta.data && respuesta.data.token) {
+                localStorage.setItem('token', respuesta.data.token);
+                localStorage.setItem('usuario', JSON.stringify(respuesta.data.usuario));
+                onRegistroSuccess(respuesta.data.usuario);
+            }
         } catch (err) {
-            setError(err.response?.data?.error || 'Error al crear la cuenta. Intente de nuevo.');
-        } finally { 
-            setCargando(false); 
+            console.error('[REGISTRO ERROR]', err);
+            setError(err.response?.data?.error || 'Error interno del servidor al procesar el registro.');
+        } finally {
+            setCargando(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-black p-4 font-sans relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-full bg-linear-to-br from-blue-900/10 to-black pointer-events-none"></div>
-
-            <div className="bg-gray-900/80 backdrop-blur-xl p-8 sm:p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-white/5 max-h-[90vh] overflow-y-auto no-scrollbar relative z-10 animate-fade-in-up">
-                <div className="flex justify-center mb-4">
-                    <div className="w-20 h-20 bg-blue-500/10 rounded-3xl flex items-center justify-center border border-blue-500/20 shadow-lg">
-                        <img src={logo} alt="Alerta Digital" className="w-16 h-16 object-contain" />
-                    </div>
-                </div>
-                <div className="mb-6">
-                    <button onClick={irALogin} className="text-gray-500 hover:text-white transition-colors mb-4 flex items-center text-sm font-bold active:scale-95">
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7m0 0l7-7m-7 7h18" /></svg> Volver
-                    </button>
-                    <h2 className="text-3xl font-black text-white tracking-tight leading-none">Nueva <br/><span className="text-blue-500">Cuenta</span></h2>
-                    <p className="text-gray-400 text-xs mt-3 uppercase font-black tracking-widest opacity-60">Escudo Heurístico v4.0</p>
-                </div>
-
-                {error && (
-                    <div className="bg-red-500/10 border-l-4 border-red-500 text-red-400 px-4 py-3 rounded-xl mb-6 text-[10px] font-black uppercase animate-fade-in flex items-center gap-2">
-                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        {error}
-                    </div>
-                )}
-                
-                <form onSubmit={manejarRegistro} className="space-y-4">
-                    <input type="text" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Nombre" onChange={(e) => setForm({...form, nombre: e.target.value})} required />
-                    
-                    <div className="flex gap-3">
-                        <div className="flex gap-2 w-full">
-                            <select 
-                                className="w-2/5 bg-black/50 border border-gray-700 text-white rounded-2xl px-2 py-4 focus:border-blue-500 transition-all text-sm outline-none appearance-none text-center cursor-pointer"
-                                value={codigoPais}
-                                onChange={(e) => setCodigoPais(e.target.value)}
-                            >
-                                <option value="+56">🇨🇱 +56</option>
-                                <option value="+54">🇦🇷 +54</option>
-                                <option value="+51">🇵🇪 +51</option>
-                                <option value="+57">🇨🇴 +57</option>
-                                <option value="+52">🇲🇽 +52</option>
-                            </select>
-                            <input type="tel" className="w-3/5 bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Celular" onChange={(e) => setForm({...form, celular: e.target.value})} required />
-                        </div>
-                    </div>
-
-                    <input type="email" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-5 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Correo electrónico" onChange={(e) => setForm({...form, correo: e.target.value})} required />
-                    
-                    {/* MODIFICADO: Las contraseñas ahora están en un Grid (una al lado de la otra) */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <input type="password" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Contraseña" onChange={(e) => setForm({...form, password: e.target.value})} required />
-                        <input type="password" className="w-full bg-black/50 border border-gray-700 text-white rounded-2xl px-4 py-4 focus:border-blue-500 transition-all placeholder:text-gray-500 text-sm outline-none" placeholder="Confirmar" onChange={(e) => setConfirmarPassword(e.target.value)} required />
-                    </div>
-
-                    <div className="bg-white/5 p-4 rounded-2xl border border-white/5 mt-6 mb-2">
-                        <label className="flex items-start gap-3 cursor-pointer group">
-                            <div className="relative mt-1">
-                                <input 
-                                    type="checkbox" 
-                                    checked={aceptaTerminos}
-                                    onChange={(e) => setAceptaTerminos(e.target.checked)}
-                                    className="peer h-5 w-5 appearance-none border-2 border-gray-600 bg-black/50 checked:bg-blue-600 checked:border-blue-500 transition-all cursor-pointer"
-                                />
-                                <svg className="absolute top-1 left-1 w-3 h-3 text-white hidden peer-checked:block pointer-events-none" fill="none" stroke="currentColor" strokeWidth={4} viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
-                            </div>
-                            <span className="text-[11px] text-gray-400 font-medium leading-relaxed select-none">
-                                Acepto los <button type="button" onClick={() => setVerModal(true)} className="text-blue-400 font-black hover:underline underline-offset-2">Términos de Privacidad</button> conforme a la Ley 19.628 de protección de datos.
-                            </span>
-                        </label>
-                    </div>
-
-                    <button 
-                        type="submit" 
-                        disabled={cargando || !aceptaTerminos} 
-                        className="group relative w-full font-black py-5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_40px_rgba(37,99,235,0.5)] active:scale-[0.97] transition-all duration-300 uppercase tracking-widest mt-4 text-xs overflow-hidden disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
-                    >
-                        {/* Efecto de barrido hover */}
-                        <span className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-white/10 to-blue-500/0 opacity-0 group-hover:opacity-100 group-hover:translate-x-full transition-all duration-700 ease-in-out"></span>
-                        
-                        {/* Efecto de brillo pulsante cuando está habilitado */}
-                        {!cargando && aceptaTerminos && (
-                            <span className="absolute inset-0 bg-blue-400/5 animate-pulse rounded-2xl"></span>
-                        )}
-                        
-                        {cargando ? (
-                            <span className="relative z-10 flex items-center justify-center gap-3">
-                                <span className="relative w-6 h-6">
-                                    <span className="absolute inset-0 border-2 border-white/30 rounded-full animate-ping"></span>
-                                    <span className="absolute inset-0 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                                </span>
-                                <span className="animate-pulse tracking-wider">CREANDO ESCUDO</span>
-                            </span>
-                        ) : (
-                            <span className="relative z-10 flex items-center justify-center gap-2">
-                                <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                                <span>CREAR MI ESCUDO DIGITAL</span>
-                            </span>
-                        )}
-                    </button>
-                </form>
+        <div className="flex-1 w-full px-6 py-8 flex flex-col justify-center bg-gray-950 font-sans overflow-y-auto">
+            
+            {/* ENCABEZADO */}
+            <div className="text-center mb-8">
+                <h2 className="text-3xl font-black text-white tracking-tighter uppercase">
+                    Crear <span className="text-blue-500">Cuenta</span>
+                </h2>
+                <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mt-1">
+                    Únete al Escudo Heurístico
+                </p>
             </div>
 
+            {/* ALERTA DE ERROR */}
+            {error && (
+                <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold p-4 rounded-2xl mb-5 text-center animate-pulse">
+                    ⚠️ {error}
+                </div>
+            )}
+
+            {/* FORMULARIO */}
+            <form onSubmit={manejarRegistro} className="space-y-4">
+                <div>
+                    <input 
+                        type="text" 
+                        name="nombre"
+                        className="w-full bg-black/40 border border-gray-800 text-white rounded-2xl px-5 py-4 focus:border-blue-500 outline-none text-sm transition-colors" 
+                        placeholder="Nombre Completo" 
+                        value={form.nombre}
+                        onChange={manejarInput}
+                        required 
+                        disabled={cargando}
+                    />
+                </div>
+
+                <div className="flex gap-2">
+                    <select 
+                        value={codigoPais} 
+                        onChange={(e) => setCodigoPais(e.target.value)}
+                        className="bg-black/40 border border-gray-800 text-gray-400 rounded-2xl px-3 py-4 text-sm outline-none focus:border-blue-500"
+                        disabled={cargando}
+                    >
+                        <option value="+56">🇨🇱 +56</option>
+                        <option value="+1">🇺🇸 +1</option>
+                        <option value="+34">🇪🇸 +34</option>
+                    </select>
+                    <input 
+                        type="tel" 
+                        name="celular"
+                        className="flex-1 bg-black/40 border border-gray-800 text-white rounded-2xl px-5 py-4 focus:border-blue-500 outline-none text-sm transition-colors" 
+                        placeholder="Número de Celular" 
+                        value={form.celular}
+                        onChange={manejarInput}
+                        required 
+                        disabled={cargando}
+                    />
+                </div>
+
+                <div>
+                    <input 
+                        type="email" 
+                        name="correo"
+                        className="w-full bg-black/40 border border-gray-800 text-white rounded-2xl px-5 py-4 focus:border-blue-500 outline-none text-sm transition-colors" 
+                        placeholder="Correo electrónico" 
+                        value={form.correo}
+                        onChange={manejarInput}
+                        required 
+                        disabled={cargando}
+                    />
+                </div>
+
+                <div>
+                    <input 
+                        type="password" 
+                        name="password"
+                        className="w-full bg-black/40 border border-gray-800 text-white rounded-2xl px-5 py-4 focus:border-blue-500 outline-none text-sm transition-colors" 
+                        placeholder="Contraseña" 
+                        value={form.password}
+                        onChange={manejarInput}
+                        required 
+                        disabled={cargando}
+                    />
+                </div>
+
+                <div>
+                    <input 
+                        type="password" 
+                        className="w-full bg-black/40 border border-gray-800 text-white rounded-2xl px-5 py-4 focus:border-blue-500 outline-none text-sm transition-colors" 
+                        placeholder="Confirmar Contraseña" 
+                        value={confirmarPassword}
+                        onChange={(e) => setConfirmarPassword(e.target.value)}
+                        required 
+                        disabled={cargando}
+                    />
+                </div>
+
+                {/* CASILLA DE VERIFICACIÓN DE TÉRMINOS */}
+                <div className="flex items-center gap-3 py-2 px-1 select-none">
+                    <input 
+                        type="checkbox" 
+                        id="terminos" 
+                        checked={aceptaTerminos}
+                        onChange={(e) => setAceptaTerminos(e.target.checked)}
+                        className="w-5 h-5 accent-blue-600 bg-black border-gray-800 rounded-md focus:ring-0"
+                        disabled={cargando}
+                    />
+                    <label htmlFor="terminos" className="text-xs text-gray-400 leading-normal">
+                        Acepto las{' '}
+                        <button 
+                            type="button" 
+                            onClick={() => setVerModal(true)} 
+                            className="text-blue-500 hover:underline font-bold"
+                        >
+                            Políticas de Privacidad (Ley 21.719)
+                        </button>
+                    </label>
+                </div>
+
+                {/* BOTÓN SUBMIT */}
+                <button 
+                    type="submit" 
+                    disabled={cargando}
+                    className="w-full font-black py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_25px_rgba(37,99,235,0.3)] transition-all active:scale-[0.97] uppercase tracking-widest text-sm disabled:opacity-40"
+                >
+                    {cargando ? 'Procesando Registro...' : 'REGISTRARME'}
+                </button>
+            </form>
+
+            {/* BOTÓN IR A LOGIN */}
+            <div className="mt-8 text-center">
+                <p className="text-gray-500 text-xs font-medium">
+                    ¿Ya tienes una cuenta activa?{' '}
+                    <button 
+                        onClick={irALogin} 
+                        className="text-blue-400 font-bold hover:underline ml-1"
+                        disabled={cargando}
+                    >
+                        Inicia Sesión
+                    </button>
+                </p>
+            </div>
+
+            {/* ======================================================= */}
+            {/* MODAL LEGAL: ADAPTADO A LA NUEVA LEY CHILENA 21.719       */}
+            {/* ======================================================= */}
             {verModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fade-in">
-                    <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setVerModal(false)}></div>
-                    <div className="bg-gray-900 border border-white/10 w-full max-w-lg rounded-[2.5rem] p-8 relative z-10 shadow-2xl max-h-[80vh] overflow-hidden flex flex-col">
-                        <header className="mb-6 flex justify-between items-center shrink-0 border-b border-white/5 pb-4">
-                            <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-                                <span className="w-2 h-6 bg-blue-500 rounded-full"></span> Integridad de Datos
-                            </h3>
-                            <button onClick={() => setVerModal(false)} className="text-gray-500 hover:text-white p-2 bg-white/5 rounded-full transition-colors"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
-                        </header>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in">
+                    <div className="bg-gray-950 border border-white/10 rounded-[2.5rem] p-6 max-w-md w-full max-h-[80vh] flex flex-col shadow-2xl relative">
                         
-                        <div className="flex-1 overflow-y-auto no-scrollbar space-y-6 pr-2">
-                            <section>
-                                <h4 className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">1. Marco Legal Chileno (Ley 19.628)</h4>
-                                <p className="text-gray-300 text-sm leading-relaxed">
-                                    En cumplimiento con la **Ley N° 19.628 sobre Protección de la Vida Privada**, Alerta Digital informa que el tratamiento de sus datos personales se realizará con el único propósito de proveer seguridad heurística. No comercializamos, cedemos ni transferimos su información a terceros.
+                        <header className="mb-4 text-center shrink-0">
+                            <h3 className="text-lg font-black text-white uppercase tracking-tight">Política de Tratamiento de Datos</h3>
+                            <p className="text-blue-500 text-[10px] font-black uppercase tracking-widest mt-1">Conformidad Ley Nº 21.719</p>
+                        </header>
+
+                        <div className="flex-1 overflow-y-auto pr-1 space-y-5 text-gray-400 text-xs custom-scrollbar leading-relaxed">
+                            <section className="border-b border-white/5 pb-3">
+                                <h4 className="text-white font-black uppercase tracking-wider text-[11px] mb-1">1. Responsables del Tratamiento</h4>
+                                <p>
+                                    La recolección y el procesamiento técnico de la información son gestionados de forma directa y exclusiva por el equipo de desarrollo de Alerta Digital, liderado por los ingenieros del proyecto Tomás Fuentes y Gabriel Tello.
+                                </p>
+                            </section>
+
+                            <section className="border-b border-white/5 pb-3">
+                                <h4 className="text-white font-black uppercase tracking-wider text-[11px] mb-1">2. Consentimiento y Finalidad (Art. 12)</h4>
+                                <p>
+                                    Al validar esta casilla, usted otorga su consentimiento libre, explícito e informado para que la aplicación acceda de manera automatizada a los mensajes SMS recibidos en su dispositivo. El fin exclusivo de este tratamiento es realizar un análisis heurístico preventivo mediante modelos de Inteligencia Artificial para alertar sobre potenciales estafas (*smishing*).
+                                </p>
+                            </section>
+
+                            <section className="border-b border-white/5 pb-3">
+                                <h4 className="text-white font-black uppercase tracking-wider text-[11px] mb-1">3. Principio de Proporcionalidad y Destrucción</h4>
+                                <p>
+                                    En estricto cumplimiento del principio de proporcionalidad, el contenido de texto de sus mensajes SMS es procesado de forma efímera en la memoria RAM de nuestros servidores seguros y es **destruido inmediatamente** tras emitirse la calificación de riesgo. Ningún texto de SMS es almacenado de forma persistente en bases de datos.
+                                </p>
+                            </section>
+
+                            <section className="border-b border-white/5 pb-3">
+                                <h4 className="text-white font-black uppercase tracking-wider text-[11px] mb-1">4. Ejercicio de Derechos ARCO-P</h4>
+                                <p>
+                                    Bajo el marco normativo nacional, usted posee el control completo de su información. Puede ejercer su **Derecho de Oposición** en cualquier momento desactivando el análisis en los ajustes de su Perfil. Asimismo, cuenta con el **Derecho de Supresión**, pudiendo solicitar la eliminación total de su registro; dicha solicitud congelará la cuenta en un periodo de gracia legal de 30 días antes del borrado físico definitivo en nuestros motores Oracle Cloud.
                                 </p>
                             </section>
 
                             <section>
-                                <h4 className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">2. Acceso Transparente a Mensajes</h4>
-                                <p className="text-gray-300 text-sm leading-relaxed">
-                                    El acceso a permisos de lectura de mensajes tiene como **fin exclusivo** agilizar el ingreso de contenido al motor de análisis para una detección rápida de fraudes. Bajo ningún concepto se utilizará este acceso para vigilancia o monitoreo no relacionado con la ciberseguridad personal del usuario.
-                                </p>
-                            </section>
-
-                            <section>
-                                <h4 className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">3. Integridad y Seguridad (Ley 21.459)</h4>
-                                <p className="text-gray-300 text-sm leading-relaxed">
-                                    De acuerdo con la **Ley N° 21.459 sobre Delitos Informáticos**, garantizamos la integridad de su información mediante encriptación de grado bancario. El procesamiento se realiza en servidores de Oracle Cloud, asegurando la confidencialidad absoluta de cada escaneo.
-                                </p>
-                            </section>
-
-                            <section>
-                                <h4 className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">4. Derecho de Cancelación</h4>
-                                <p className="text-gray-300 text-sm leading-relaxed">
-                                    Usted mantiene el control total sobre sus registros. Puede solicitar la eliminación definitiva de su historial y cuenta en cualquier momento desde su perfil de usuario, ejerciendo sus derechos de acceso, rectificación y cancelación.
+                                <h4 className="text-white font-black uppercase tracking-wider text-[11px] mb-1">5. Seguridad y Contacto</h4>
+                                <p>
+                                    Garantizamos el secreto técnico y la seguridad mediante cifrado SSL/TLS en tránsito. Ante dudas, revocaciones o solicitudes de portabilidad, puede tomar contacto directo a través del canal oficial: <a href="mailto:soporte@alertadigital.cl" className="text-blue-400 underline font-bold">gab.tello@duocuc.cl</a>.
                                 </p>
                             </section>
                         </div>
 
                         <button 
                             onClick={() => { setAceptaTerminos(true); setVerModal(false); }}
-                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl mt-8 shadow-lg active:scale-95 transition-all text-xs uppercase tracking-widest shrink-0"
+                            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl mt-6 shadow-xl active:scale-95 transition-all text-xs uppercase tracking-widest shrink-0"
                         >
-                            Acepto y cierro
+                            Aceptar y Continuar
                         </button>
                     </div>
                 </div>
