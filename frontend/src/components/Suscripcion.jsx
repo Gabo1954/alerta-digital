@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import api from '../services/api';
 
-const Suscripcion = ({ isPremium }) => {
+const Suscripcion = ({ isPremium, setIsPremium, setTabActiva }) => {
     const [cargando, setCargando] = useState(false);
+    const [isCanceling, setIsCanceling] = useState(false); // Estado para el botón de cancelar
 
     const iniciarPagoWebpay = async () => {
         setCargando(true);
         try {
             const { data } = await api.post('/pagos/crear-sesion');
 
-            // Creación de formulario dinámico para POST automático al portal de Transbank
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = data.url;
@@ -28,10 +28,43 @@ const Suscripcion = ({ isPremium }) => {
         }
     };
 
+    // NUEVO: Función para cancelar suscripción
+    const manejarCancelacion = async () => {
+        if (!window.confirm('¿Estás seguro de que deseas cancelar tu protección VIP? Perderás acceso al escáner de imágenes inmediatamente.')) {
+            return;
+        }
+
+        setIsCanceling(true);
+        try {
+            // Llamamos a nuestro nuevo endpoint en Node.js
+            const { data } = await api.post('/usuarios/cancelar-suscripcion');
+            
+            // 1. Alertamos al usuario
+            alert(data.mensaje);
+            
+            // 2. Limpiamos el localStorage para que no entre como PRO al reiniciar
+            localStorage.removeItem('isPro');
+            const usuarioGuardado = JSON.parse(localStorage.getItem('usuario'));
+            if (usuarioGuardado) {
+                usuarioGuardado.es_vip = false;
+                localStorage.setItem('usuario', JSON.stringify(usuarioGuardado));
+            }
+
+            // 3. Cambiamos el estado en tiempo real para que la UI se actualice
+            setIsPremium(false);
+            setTabActiva('inicio');
+
+        } catch (error) {
+            alert(error.response?.data?.error || 'Error al intentar cancelar la suscripción.');
+        } finally {
+            setIsCanceling(false);
+        }
+    };
+
     // --- VISTA: USUARIO YA ES VIP ---
     if (isPremium) {
         return (
-            <div className="p-6 flex flex-col items-center justify-center animate-fade-in pt-12">
+            <div className="p-6 flex flex-col items-center justify-center animate-fade-in pt-12 pb-32">
                 <div className="relative w-full max-w-sm bg-linear-to-br from-yellow-400 via-yellow-600 to-yellow-800 p-1 rounded-3xl shadow-[0_0_50px_rgba(250,204,21,0.3)] mb-8">
                     <div className="bg-gray-950 p-8 rounded-[1.35rem] h-full relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/20 blur-3xl"></div>
@@ -49,15 +82,35 @@ const Suscripcion = ({ isPremium }) => {
                             <span className="text-sm md:text-base font-bold bg-gradient-to-r from-yellow-400 to-amber-500 text-black px-3 py-1 rounded-full uppercase tracking-widest shadow-[0_0_15px_rgba(251,191,36,0.4)] flex items-center gap-1">
                                 VIP
                             </span>
-                        </h2>                        <p className="text-gray-400 text-sm">Protección total desbloqueada.</p>
+                        </h2>                        
+                        <p className="text-gray-400 text-sm">Protección total desbloqueada.</p>
                     </div>
                 </div>
 
-                <div className="w-full bg-gray-900/50 border border-white/5 rounded-3xl p-6 text-left space-y-4">
+                <div className="w-full max-w-sm bg-gray-900/50 border border-white/5 rounded-3xl p-6 text-left space-y-4 mb-8">
                     <h3 className="text-white font-bold text-sm uppercase tracking-widest opacity-50 mb-2">Tus Beneficios Actuales</h3>
                     <p className="text-gray-300 text-sm flex items-center gap-3"><span className="text-green-500 text-xl">✓</span> Escáner visual de Imágenes</p>
                     <p className="text-gray-300 text-sm flex items-center gap-3"><span className="text-green-500 text-xl">✓</span> Historial ilimitado de análisis</p>
                     <p className="text-gray-300 text-sm flex items-center gap-3"><span className="text-green-500 text-xl">✓</span> Academia Avanzada</p>
+                </div>
+
+                {/* BOTÓN CANCELAR SUSCRIPCIÓN */}
+                <div className="w-full max-w-sm px-2">
+                    <button 
+                        onClick={manejarCancelacion}
+                        disabled={isCanceling}
+                        className="w-full bg-transparent border border-red-500/30 text-red-500 hover:bg-red-500/10 font-bold py-4 rounded-2xl transition-all active:scale-95 text-xs uppercase tracking-widest flex justify-center items-center gap-2 disabled:opacity-50"
+                    >
+                        {isCanceling ? (
+                            <span className="animate-spin h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full"></span>
+                        ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        )}
+                        {isCanceling ? 'Cancelando...' : 'Cancelar Suscripción'}
+                    </button>
+                    <p className="text-gray-600 text-center text-[10px] mt-3 font-medium px-4">
+                        Al cancelar, perderás los beneficios PRO de forma inmediata y no habrá cobros futuros.
+                    </p>
                 </div>
             </div>
         );
@@ -65,7 +118,7 @@ const Suscripcion = ({ isPremium }) => {
 
     // --- VISTA: OFERTA DE PLANES (BÁSICO VS PRO) ---
     return (
-        <div className="p-5 flex flex-col justify-center animate-fade-in pt-8">
+        <div className="p-5 flex flex-col justify-center animate-fade-in pt-8 pb-32">
             <div className="text-center mb-10 flex flex-col items-center">
                 <h2 className="text-3xl md:text-4xl font-black text-white leading-snug tracking-tight">
                     Mejora tu <br />
@@ -126,7 +179,7 @@ const Suscripcion = ({ isPremium }) => {
                 </div>
             </div>
 
-            {/* BOTÓN DE PAGO Y LOGO WEBPAY INTEGRADO (Solución imagen rota) */}
+            {/* BOTÓN DE PAGO Y LOGO WEBPAY INTEGRADO */}
             <div className="bg-gray-900/80 backdrop-blur-xl rounded-[2rem] border border-white/5 p-6 shadow-2xl relative overflow-hidden">
                 <button
                     onClick={iniciarPagoWebpay}
@@ -143,7 +196,6 @@ const Suscripcion = ({ isPremium }) => {
                 <div className="flex flex-col items-center gap-2 mt-5">
                     <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest text-center">Pago 100% seguro procesado por</p>
 
-                    {/* SVG y Texto de Webpay (No se romperá nunca) */}
                     <div className="flex items-center gap-2 opacity-60 grayscale hover:grayscale-0 transition-all">
                         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />

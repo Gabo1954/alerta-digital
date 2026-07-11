@@ -42,13 +42,12 @@ exports.obtenerUsuarioPorId = async (req, res) => {
     }
 };
 
+// Solicitar Eliminación de Cuenta (30 Días)
 exports.solicitarEliminacion = async (req, res) => {
     const idUsuario = req.usuario.id;
 
     try {
-        // Hacemos la eliminación lógica marcando la fecha actual
         const sql = `UPDATE usuario SET fecha_eliminacion_logica = SYSDATE WHERE id_usuario = :id_user`;
-        
         await execute(sql, { id_user: idUsuario }, { autoCommit: true });
 
         res.status(200).json({ 
@@ -57,5 +56,23 @@ exports.solicitarEliminacion = async (req, res) => {
     } catch (error) {
         console.error('Error al desactivar cuenta:', error);
         res.status(500).json({ error: 'Error interno del servidor.' });
+    }
+};
+
+// NUEVO: Cancelar Suscripción VIP
+exports.cancelarSuscripcion = async (req, res) => {
+    const idUsuario = req.usuario.id;
+
+    try {
+        // Actualizamos la base de datos para quitar el estado VIP
+        const sql = `UPDATE usuario SET es_vip = 0 WHERE id_usuario = :id_user`;
+        await execute(sql, { id_user: idUsuario }, { autoCommit: true });
+
+        res.status(200).json({ 
+            mensaje: "Tu suscripción ha sido cancelada. Has vuelto al plan básico." 
+        });
+    } catch (error) {
+        console.error('Error al cancelar suscripción:', error);
+        res.status(500).json({ error: 'Error interno al procesar la cancelación.' });
     }
 };
