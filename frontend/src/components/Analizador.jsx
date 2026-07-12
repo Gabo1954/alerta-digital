@@ -8,7 +8,7 @@ import { AdMob } from '@capacitor-community/admob';
 const Analizador = ({ isPremium, setTabActiva }) => {
     const [tipoAnalisis, setTipoAnalisis] = useState('texto');
     const [mensaje, setMensaje] = useState('');
-    const [estadoBoton, setEstadoBoton] = useState('idle'); // idle | loading | success | error
+    const [estadoBoton, setEstadoBoton] = useState('idle'); 
     const [estadoBotonImagen, setEstadoBotonImagen] = useState('idle');
     const [resultado, setResultado] = useState(null);
     const [estadoFeedback, setEstadoFeedback] = useState('pendiente');
@@ -16,16 +16,14 @@ const Analizador = ({ isPremium, setTabActiva }) => {
     const [imagenPreview, setImagenPreview] = useState(null);
     const fileInputRef = useRef(null);
     
-    // Estado para el escaneo VIP gratuito (Recompensado)
     const [infoModal, setInfoModal] = useState(false);
     const [escaneoGratisDisponible, setEscaneoGratisDisponible] = useState(() => {
         return localStorage.getItem('escaneo_vip_regalo_usado') !== 'true';
     });
     const [recompensaObtenida, setRecompensaObtenida] = useState(false);
 
-    const MAX_CHARS = 1000; // Límite de 1000 caracteres
+    const MAX_CHARS = 1000; 
 
-    // Referencias para limpiar timeouts al desmontar
     const timeoutsRef = useRef([]);
     useEffect(() => {
         return () => {
@@ -43,7 +41,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         return id;
     };
     
-    // Inicializar AdMob 1 sola vez al montar (usa imports estáticos)
     const admobInicializado = useRef(false);
     
     useEffect(() => {
@@ -63,13 +60,11 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         init();
     }, []);
 
-    // Ref para controlar que el anuncio intersticial solo se muestre UNA vez por escaneo
     const interstitialMostrado = useRef(false);
 
-    // --- ADMOB INTERSTICIAL: se muestra al terminar escaneo (usuario no VIP) ---
     const mostrarInterstitialAd = async () => {
         if (Capacitor.getPlatform() === 'web') return;
-        if (interstitialMostrado.current) return; // Ya se mostró este escaneo
+        if (interstitialMostrado.current) return; 
         interstitialMostrado.current = true;
         try {
             await AdMob.prepareInterstitial({
@@ -82,7 +77,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         }
     };
 
-    // --- ADMOB REWARDED: prueba gratis al hacer clic en "Ver Video" ---
     const mostrarRewardedAd = async () => {
         if (Capacitor.getPlatform() === 'web') {
             setRecompensaObtenida(true);
@@ -108,7 +102,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         }
     }, [resultado, isPremium]);
 
-    // --- FUNCIONES DE INTERACCIÓN ---
     const importarDesdePortapapeles = async () => {
         try {
             const text = await navigator.clipboard.readText();
@@ -128,7 +121,7 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         setImagenPreview(null);
         setMensaje('');
         setEstadoFeedback('pendiente');
-        interstitialMostrado.current = false; // Reinicia el control del anuncio
+        interstitialMostrado.current = false; 
     };
 
     const analizarTextoAPI = async () => {
@@ -165,7 +158,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                 texto_leido: respuesta.data.texto_leido_oculto || ''
             });
 
-            // Si usó su escaneo de regalo, lo marcamos como usado para siempre
             if (!isPremium && recompensaObtenida) {
                 localStorage.setItem('escaneo_vip_regalo_usado', 'true');
                 setEscaneoGratisDisponible(false);
@@ -205,7 +197,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         }
     };
 
-    // --- MOTOR DE INDICACIONES Y EXPLICACIÓN NARRATIVA ---
     const obtenerIndicacionNarrativa = (esPeligroso) => {
         const texto = (mensaje || resultado?.texto_leido || '').toLowerCase();
 
@@ -231,9 +222,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
             : ["Estructura gramatical coherente.", "Ausencia de enlaces o redirecciones sospechosas."];
     };
 
-    // ==========================================
-    // RENDER 1: VISTA DE RESULTADOS
-    // ==========================================
     if (resultado) {
         const esPeligroso = resultado.nivel_riesgo === 'Alto' || resultado.nivel_riesgo === 'Medio';
         const razonesEvidencia = generarRazonesEvidencia(esPeligroso);
@@ -283,7 +271,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                     </div>
                 </div>
 
-                {/* SECCIÓN DE ENTRENAMIENTO REFORZADA */}
                 {estadoFeedback === 'pendiente' && (
                     <div className="bg-gray-800/80 border border-gray-700 p-6 rounded-[2rem] shadow-lg text-center animate-fade-in">
                         <p className="text-gray-300 text-xs font-bold mb-4 uppercase tracking-[0.2em] opacity-80">¿Fue acertado el sistema?</p>
@@ -317,9 +304,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
         );
     }
 
-    // ==========================================
-    // RENDER 2: VISTA PRINCIPAL (INGRESO)
-    // ==========================================
     return (
         <>
         <div className="w-full px-5 pt-10 pb-24 font-sans shrink-0">
@@ -351,7 +335,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                 )}
             </div>
 
-            {/* HEADER CORREGIDO SIN COLISIONES */}
             <div className="mb-6 flex justify-between items-center px-2 shrink-0">
                 <h2 className="flex flex-col text-4xl font-black tracking-tighter text-white uppercase leading-none select-none">
                     <span>Escáner</span>
@@ -371,19 +354,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
 
             {tipoAnalisis === 'texto' ? (
                 <div className="animate-fade-in relative px-1">
-                    {/* SHORTCUTS DE APLICACIONES OFICIALES */}
-                    <div className="flex gap-2 mb-4 shrink-0">
-                        <button onClick={() => window.open('whatsapp://')} className="flex-1 bg-green-600/10 border border-green-500/20 text-green-500 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
-                            <span>WhatsApp</span>
-                        </button>
-                        <button onClick={() => window.open('fb-messenger://')} className="flex-1 bg-blue-600/10 border border-blue-500/20 text-blue-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
-                            <span>Messenger</span>
-                        </button>
-                        <button onClick={() => window.open('sms:')} className="flex-1 bg-gray-600/10 border border-gray-500/20 text-gray-400 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
-                            <span>SMS</span>
-                        </button>
-                    </div>
-
                     <div className="relative group min-h-[220px]">
                         <textarea
                             className="flex-1 w-full bg-gray-900 border border-gray-800 text-white rounded-3xl p-6 pt-16 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all placeholder:text-gray-600 text-lg leading-relaxed shadow-inner resize-none"
@@ -393,7 +363,6 @@ const Analizador = ({ isPremium, setTabActiva }) => {
                             onChange={(e) => setMensaje(e.target.value)}
                         ></textarea>
 
-                        {/* BOTONES FLOTANTES INTERNOS */}
                         <div className="absolute top-4 right-4 flex gap-2">
                             <button onClick={importarDesdePortapapeles} className="flex items-center gap-2 bg-gray-800/90 hover:bg-blue-600 text-gray-300 hover:text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border border-white/5 active:scale-90 shadow-xl" title="Pegar">📋 PEGAR</button>
                             {mensaje && <button onClick={() => setMensaje('')} className="bg-gray-800/90 hover:bg-red-600 text-gray-400 w-11 h-11 rounded-xl transition-all border border-white/5 active:scale-90 shadow-xl flex items-center justify-center text-sm" title="Vaciar">✕</button>}

@@ -17,12 +17,13 @@ public class SmsReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if ("android.provider.Telephony.SMS_RECEIVED".equals(intent.getAction())) {
 
-            // CONSULTA DE CONSENTIMIENTO (LEY 21.719)
+            Log.d(TAG, "¡SMS RECIBIDO A NIVEL DE SISTEMA!");
+
             SharedPreferences prefs = context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
-            boolean consentimiento = "true".equals(prefs.getString("consentimiento_sms", "false"));
+            boolean consentimiento = "true".equals(prefs.getString("consentimiento_sms", "true")); // Por defecto true
 
             if (!consentimiento) {
-                Log.d(TAG, "Privacidad protegida: SMS ignorado por oposición del usuario.");
+                Log.d(TAG, "Privacidad protegida: SMS ignorado por falta de consentimiento.");
                 return;
             }
 
@@ -31,12 +32,18 @@ public class SmsReceiver extends BroadcastReceiver {
                 Object[] pdus = (Object[]) bundle.get("pdus");
                 if (pdus != null) {
                     for (Object pdu : pdus) {
-                        SmsMessage sms = SmsMessage.createFromPdu((byte[]) pdu, bundle.getString("format"));
+                        String format = bundle.getString("format");
+                        SmsMessage sms = SmsMessage.createFromPdu((byte[]) pdu, format);
+
+                        String remitente = sms.getDisplayOriginatingAddress();
                         String contenido = sms.getMessageBody();
 
-                        // Despertar OverlayService
+                        Log.d(TAG, "Intercepción detectada. Remitente: " + remitente);
+
+                        // Iniciar el servicio que hará la petición a Render
                         Intent serviceIntent = new Intent(context, OverlayService.class);
                         serviceIntent.putExtra("sms_text", contenido);
+                        serviceIntent.putExtra("sms_sender", remitente);
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                             context.startForegroundService(serviceIntent);

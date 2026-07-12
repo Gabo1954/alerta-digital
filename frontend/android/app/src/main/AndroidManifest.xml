@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- 1. Declaración de hardware (Soluciona el warning de telephony) -->
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
+    <!-- 2. Permisos base -->
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <!-- 3. Soluciona el warning de Android 14+ (Declaración de tipo de servicio) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <application
         android:allowBackup="true"
@@ -18,26 +28,19 @@
 
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
-            android:name=".SplashActivity"
-            android:label="@string/title_activity_main"
-            android:theme="@style/AppTheme.NoActionBarLaunch"
-            android:exported="true">
-
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-
-        <activity
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:exported="true">
 
-            <intent-filter android:autoVerify="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- 4. Soluciona el error de http(s) quitando autoVerify="true" -->
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -45,13 +48,20 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".SmsReceiver" android:exported="true">
+        <receiver
+            android:name=".SmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
             <intent-filter android:priority="999">
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>
         </receiver>
 
-        <service android:name=".OverlayService" android:exported="false" />
+        <!-- 5. Soluciona el warning de Android 14+ aplicando el tipo en el servicio -->
+        <service
+            android:name=".OverlayService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
@@ -64,7 +74,7 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
+                android:resource="@xml/file_paths" />
         </provider>
     </application>
 
