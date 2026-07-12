@@ -18,6 +18,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.util.Log;
 
 import org.json.JSONObject;
 import java.io.OutputStream;
@@ -35,7 +36,6 @@ public class OverlayService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        // Android exige una notificación para mantener vivo el servicio en segundo plano
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel("alerta_chan", "Alerta Scanner", NotificationManager.IMPORTANCE_LOW);
             NotificationManager manager = getSystemService(NotificationManager.class);
@@ -43,7 +43,7 @@ public class OverlayService extends Service {
 
             Notification notification = new Notification.Builder(this, "alerta_chan")
                     .setContentTitle("Alerta Digital")
-                    .setContentText("Analizando SMS entrante con IA...")
+                    .setContentText("Analizando SMS en segundo plano...")
                     .setSmallIcon(android.R.drawable.ic_dialog_info)
                     .build();
             startForeground(1, notification);
@@ -55,7 +55,6 @@ public class OverlayService extends Service {
         if (intent != null) {
             String smsText = intent.getStringExtra("sms_text");
             String smsSender = intent.getStringExtra("sms_sender");
-            // Realizamos la petición HTTP a Render en un hilo secundario
             analizarSmsEnRender(smsText, smsSender);
         }
         return START_NOT_STICKY;
@@ -65,7 +64,6 @@ public class OverlayService extends Service {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try {
-                // LLAMADA HTTP A TU BACKEND EN RENDER
                 URL url = new URL("https://alerta-digital.onrender.com/api/mensajes/analizar");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
@@ -79,22 +77,39 @@ public class OverlayService extends Service {
                 os.write(jsonParam.toString().getBytes("UTF-8"));
                 os.close();
 
-                Scanner scanner = new Scanner(conn.getInputStream());
-                String response = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
-                scanner.close();
+                int responseCode = conn.getResponseCode();
+                
+                // Si la API responde correctamente
+                if (responseCode >= 200 && responseCode < 300) {
+                    Scanner scanner = new Scanner(conn.getInputStream());
+                    String response = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
+                    scanner.close();
 
-                JSONObject jsonResponse = new JSONObject(response);
-                JSONObject reporte = jsonResponse.getJSONObject("reporte");
-                String riesgo = reporte.getString("nivel_riesgo");
-
-                // Volvemos al hilo principal para dibujar la burbuja en pantalla
-                new Handler(Looper.getMainLooper()).post(() -> mostrarBurbuja(riesgo, sender));
+                    JSONObject jsonResponse = new JSONObject(response);
+                    JSONObject reporte = jsonResponse.getJSONObject("reporte");
+                    String riesgo = reporte.getString("nivel_riesgo");
+                    
+                    new Handler(Looper.getMainLooper()).post(() -> mostrarBurbuja(riesgo, sender));
+                } else {
+                    // SI LA API FALLA (Falta de Token o Servidor Caído), APLICAMOS IA LOCAL DE RESPALDO
+                    Log.e("AlertaDigital", "La API rechazó la conexión o falló. Aplicando análisis local de emergencia.");
+                    lanzarAnalisisDeRespaldo(texto, sender);
+                }
 
             } catch (Exception e) {
-                e.printStackTrace();
-                new Handler(Looper.getMainLooper()).post(this::stopSelf);
+                // SI NO HAY INTERNET O HAY OTRO ERROR CRÍTICO, APLICAMOS IA LOCAL
+                Log.e("AlertaDigital", "Error crítico en conexión: " + e.getMessage());
+                lanzarAnalisisDeRespaldo(texto, sender);
             }
         });
+    }
+
+    // MÉTODO DE RESPALDO: Analiza el SMS aunque no haya internet
+    private void lanzarAnalisisDeRespaldo(String texto, String sender) {
+        String t = texto.toLowerCase();
+        boolean esPeligroso = t.contains("http") || t.contains("www") || t.contains("banco") || t.contains("clave") || t.contains("urgente") || t.contains("bloqueada") || t.contains("premio");
+        String riesgo = esPeligroso ? "Alto" : "Bajo";
+        new Handler(Looper.getMainLooper()).post(() -> mostrarBurbuja(riesgo, sender));
     }
 
     private void mostrarBurbuja(String riesgo, String sender) {
@@ -104,32 +119,30 @@ public class OverlayService extends Service {
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(50, 40, 50, 40);
 
-        // Color rojo si es peligroso, verde si es seguro
         boolean esPeligroso = riesgo.equals("Alto") || riesgo.equals("Medio");
 
         GradientDrawable shape = new GradientDrawable();
         shape.setShape(GradientDrawable.RECTANGLE);
         shape.setCornerRadius(50f);
         shape.setColor(esPeligroso ? Color.parseColor("#EF4444") : Color.parseColor("#22C55E"));
-        shape.setStroke(4, Color.parseColor("#FFFFFF"));
+        shape.setStroke(6, Color.parseColor("#FFFFFF"));
         layout.setBackground(shape);
 
         TextView title = new TextView(this);
-        title.setText("🛡️ Alerta Digital - " + sender);
+        title.setText("🛡️ Alerta Digital: " + sender);
         title.setTextColor(Color.WHITE);
         title.setTextSize(14);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         layout.addView(title);
 
         TextView desc = new TextView(this);
-        desc.setText(esPeligroso ? "¡RIESGO DETECTADO! No abras enlaces." : "SMS Seguro. Nivel bajo.");
+        desc.setText(esPeligroso ? "¡RIESGO DETECTADO! No abras el enlace." : "SMS Seguro. Nivel de riesgo bajo.");
         desc.setTextColor(Color.WHITE);
         desc.setTextSize(16);
         desc.setPadding(0, 10, 0, 0);
         desc.setTypeface(null, android.graphics.Typeface.BOLD);
         layout.addView(desc);
 
-        // Configuramos la ventana para dibujarse sobre otras aplicaciones
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -139,15 +152,12 @@ public class OverlayService extends Service {
                 PixelFormat.TRANSLUCENT
         );
         params.gravity = Gravity.TOP;
-        params.y = 100; // Margen superior
+        params.y = 80; 
 
         floatingView = layout;
         windowManager.addView(floatingView, params);
 
-        // Criterio de Aceptación: Se cierra al tocarla
         layout.setOnClickListener(v -> destruirBurbuja());
-
-        // Criterio de Aceptación: Auto-destrucción en 6 segundos
         new Handler(Looper.getMainLooper()).postDelayed(this::destruirBurbuja, 6000);
     }
 

@@ -14,7 +14,7 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
     const [tienePermisoBurbuja, setTienePermisoBurbuja] = useState(true);
 
     const inicial = usuario?.nombre ? usuario.nombre.charAt(0).toUpperCase() : 'U';
-    const nombreCompleto = `${usuario?.nombre || 'Usuario'} ${usuario?.ap_paterno || ''}`;
+    const nombreCompleto = `${usuario?.nombre || 'Usuario'}`;
 
     useEffect(() => {
         const inicializarAjustes = async () => {
@@ -39,7 +39,6 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
     const solicitarPermisoBurbuja = async () => {
         if (Capacitor.getPlatform() === 'android') {
             await OverlayPermission.requestPermission();
-            // Re-chequeamos después de volver de los ajustes
             setTimeout(async () => {
                 const res = await OverlayPermission.checkPermission();
                 setTienePermisoBurbuja(res.granted);
