@@ -10,21 +10,20 @@ import android.telephony.SmsMessage;
 import android.util.Log;
 
 public class SmsReceiver extends BroadcastReceiver {
-
     private static final String TAG = "AlertaDigital_Vigia";
 
     @Override
     public void onReceive(Context context, Intent intent) {
         if ("android.provider.Telephony.SMS_RECEIVED".equals(intent.getAction())) {
 
-            // Leer las preferencias guardadas desde React (Capacitor)
+            // Leer las preferencias guardadas desde React
             SharedPreferences prefs = context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
             boolean consentimientoSms = "true".equals(prefs.getString("consentimiento_sms", "true"));
-            boolean burbujaActiva = "true".equals(prefs.getString("burbuja_activa", "false")); // Falso por defecto
+            boolean burbujaActiva = "true".equals(prefs.getString("burbuja_activa", "false"));
 
-            // Si el usuario apagó el interruptor de SMS o el de la Burbuja en su Perfil, ignoramos el mensaje
+            // Si apagó alguno de los dos interruptores, nos detenemos para ahorrar batería
             if (!consentimientoSms || !burbujaActiva) {
-                Log.d(TAG, "Protección en pausa: El usuario desactivó la burbuja flotante o los SMS.");
+                Log.d(TAG, "Protección en pausa: El usuario desactivó la IA en el Perfil.");
                 return;
             }
 
@@ -39,9 +38,9 @@ public class SmsReceiver extends BroadcastReceiver {
                         String remitente = sms.getDisplayOriginatingAddress();
                         String contenido = sms.getMessageBody();
 
-                        Log.d(TAG, "SMS Interceptado y autorizado para análisis. Remitente: " + remitente);
+                        Log.d(TAG, "SMS Interceptado para análisis IA. Remitente: " + remitente);
 
-                        // Iniciar el servicio que consultará la IA y mostrará la burbuja
+                        // Arranca el servicio en segundo plano que dibujará la burbuja
                         Intent serviceIntent = new Intent(context, OverlayService.class);
                         serviceIntent.putExtra("sms_text", contenido);
                         serviceIntent.putExtra("sms_sender", remitente);

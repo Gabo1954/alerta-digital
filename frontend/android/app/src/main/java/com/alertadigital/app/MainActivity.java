@@ -13,12 +13,12 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        WebView.setWebContentsDebuggingEnabled(true);
+        // Registrar el plugin para la burbuja
         registerPlugin(OverlayPermissionPlugin.class);
 
-        // ESTO ES LO QUE FALTABA: Forzar la petición de permisos al iniciar la App
+        super.onCreate(savedInstanceState);
+        WebView.setWebContentsDebuggingEnabled(true);
+
         solicitarPermisosVitales();
     }
 

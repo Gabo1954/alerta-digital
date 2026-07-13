@@ -78,7 +78,6 @@ public class OverlayService extends Service {
                 os.close();
 
                 int responseCode = conn.getResponseCode();
-
                 if (responseCode >= 200 && responseCode < 300) {
                     Scanner scanner = new Scanner(conn.getInputStream());
                     String response = scanner.useDelimiter("\\A").hasNext() ? scanner.next() : "";
@@ -99,7 +98,7 @@ public class OverlayService extends Service {
         });
     }
 
-    // Análisis Heurístico Local por si Render falla o no hay Internet
+    // Análisis Local de respaldo por si el servidor cae
     private void lanzarAnalisisDeRespaldo(String texto, String sender) {
         String t = texto.toLowerCase();
         boolean esPeligroso = t.contains("http") || t.contains("www") || t.contains("banco") || t.contains("clave") || t.contains("urgente") || t.contains("bloqueada") || t.contains("premio");
@@ -119,7 +118,6 @@ public class OverlayService extends Service {
         GradientDrawable shape = new GradientDrawable();
         shape.setShape(GradientDrawable.RECTANGLE);
         shape.setCornerRadius(50f);
-        // Colores semánticos reales de riesgo
         shape.setColor(esPeligroso ? Color.parseColor("#EF4444") : Color.parseColor("#10B981"));
         shape.setStroke(8, Color.parseColor("#FFFFFF"));
         layout.setBackground(shape);
@@ -132,7 +130,7 @@ public class OverlayService extends Service {
         layout.addView(title);
 
         TextView desc = new TextView(this);
-        desc.setText(esPeligroso ? "Posible Phishing o Fraude. No abras el enlace." : "No se detectaron amenazas en el mensaje.");
+        desc.setText(esPeligroso ? "Posible Phishing o Fraude. Cuidado con los enlaces." : "No se detectaron amenazas evidentes.");
         desc.setTextColor(Color.WHITE);
         desc.setTextSize(16);
         desc.setPadding(0, 15, 0, 0);
@@ -155,7 +153,7 @@ public class OverlayService extends Service {
 
         layout.setOnClickListener(v -> destruirBurbuja());
 
-        // Destrucción automática después de 7 segundos
+        // Destrucción automática a los 7 segundos
         new Handler(Looper.getMainLooper()).postDelayed(this::destruirBurbuja, 7000);
     }
 
