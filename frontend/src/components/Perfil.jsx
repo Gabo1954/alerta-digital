@@ -2,28 +2,46 @@ import React, { useState, useEffect } from 'react';
 import { Preferences } from '@capacitor/preferences';
 import { registerPlugin, Capacitor } from '@capacitor/core';
 
-// Criterio de Aceptación: Conectamos el plugin de Java con React
+// Conectamos el plugin nativo de Java con React
 const OverlayPermission = registerPlugin('OverlayPermission');
 
 const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
     const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [smsActivo, setSmsActivo] = useState(true);
     
-    // Estado del permiso de superposición
-    const [tienePermisoBurbuja, setTienePermisoBurbuja] = useState(true);
+    // Estados de los interruptores
+    const [smsActivo, setSmsActivo] = useState(true);
+    const [burbujaActiva, setBurbujaActiva] = useState(false);
+    const [tienePermisoBurbuja, setTienePermisoBurbuja] = useState(false);
 
     const inicial = usuario?.nombre ? usuario.nombre.charAt(0).toUpperCase() : 'U';
     const nombreCompleto = `${usuario?.nombre || 'Usuario'}`;
 
     useEffect(() => {
         const inicializarAjustes = async () => {
-            const { value } = await Preferences.get({ key: 'consentimiento_sms' });
-            setSmsActivo(value !== 'false');
+            // Cargar estado guardado de los SMS
+            const smsPref = await Preferences.get({ key: 'consentimiento_sms' });
+            setSmsActivo(smsPref.value !== 'false');
 
+            // Cargar estado guardado de la Burbuja
+            const burbujaPref = await Preferences.get({ key: 'burbuja_activa' });
+            
             if (Capacitor.getPlatform() === 'android') {
-                const res = await OverlayPermission.checkPermission();
-                setTienePermisoBurbuja(res.granted);
+                try {
+                    // Revisar si Android nos sigue dando permiso real
+                    const res = await OverlayPermission.checkPermission();
+                    setTienePermisoBurbuja(res.granted);
+                    
+                    // Si el usuario nos quitó el permiso desde los ajustes de Android, apagamos el toggle
+                    if (!res.granted) {
+                        setBurbujaActiva(false);
+                        await Preferences.set({ key: 'burbuja_activa', value: 'false' });
+                    } else {
+                        setBurbujaActiva(burbujaPref.value === 'true');
+                    }
+                } catch (e) {
+                    console.error("Error chequeando permiso inicial:", e);
+                }
             }
         };
         inicializarAjustes();
@@ -33,19 +51,47 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
         const nuevoEstado = !smsActivo;
         setSmsActivo(nuevoEstado);
         await Preferences.set({ key: 'consentimiento_sms', value: nuevoEstado.toString() });
-        alert(nuevoEstado ? "✅ Protección activada." : "🚨 Protección desactivada.");
     };
 
-    const solicitarPermisoBurbuja = async () => {
-        if (Capacitor.getPlatform() === 'android') {
-            await OverlayPermission.requestPermission();
-            setTimeout(async () => {
-                const res = await OverlayPermission.checkPermission();
-                setTienePermisoBurbuja(res.granted);
-                if (res.granted) alert("Permiso concedido. Las burbujas de alerta están activadas.");
-            }, 1000);
+    // NUEVA LÓGICA: El Toggle de la burbuja controla el permiso y el estado
+    const toggleBurbuja = async () => {
+        if (burbujaActiva) {
+            // Desactivar Burbuja
+            setBurbujaActiva(false);
+            await Preferences.set({ key: 'burbuja_activa', value: 'false' });
         } else {
-            alert("Las burbujas flotantes solo están disponibles en dispositivos Android nativos.");
+            // Activar Burbuja
+            if (Capacitor.getPlatform() === 'android') {
+                if (!tienePermisoBurbuja) {
+                    alert("Para activar la alerta en tiempo real, necesitas dar el permiso de 'Mostrar sobre otras apps'.\n\nSerás redirigido a los Ajustes. Busca 'Alerta Digital' y activa la opción.");
+                    
+                    try {
+                        await OverlayPermission.requestPermission();
+                        
+                        // POLLING: Vigilar si el usuario concedió el permiso
+                        let intentos = 0;
+                        const intervalo = setInterval(async () => {
+                            intentos++;
+                            const res = await OverlayPermission.checkPermission();
+                            if (res.granted) {
+                                clearInterval(intervalo);
+                                setTienePermisoBurbuja(true);
+                                setBurbujaActiva(true);
+                                await Preferences.set({ key: 'burbuja_activa', value: 'true' });
+                            }
+                            if (intentos >= 30) clearInterval(intervalo); // Detener a los 60 seg
+                        }, 2000);
+                    } catch (error) {
+                        console.error("Error pidiendo permiso", error);
+                    }
+                } else {
+                    // Ya tenía permiso, solo encendemos la funcionalidad
+                    setBurbujaActiva(true);
+                    await Preferences.set({ key: 'burbuja_activa', value: 'true' });
+                }
+            } else {
+                alert("Las burbujas flotantes solo están disponibles en dispositivos Android nativos.");
+            }
         }
     };
 
@@ -61,7 +107,9 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
             if (response.ok) {
                 alert(data.mensaje); 
                 onLogout();
-            } else { alert(data.error || "No se pudo procesar la solicitud."); }
+            } else { 
+                alert(data.error || "No se pudo procesar la solicitud."); 
+            }
         } catch (error) {
             alert("Error de conexión con el servidor. Intente más tarde.");
         } finally {
@@ -110,16 +158,15 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
                         </button>
                     </div>
 
+                    {/* NUEVO TOGGLE DE BURBUJA FLOTANTE */}
                     <div className="flex justify-between items-center border-t border-white/5 pt-4">
                         <div>
                             <p className="text-white font-bold text-sm">Burbuja de Alerta</p>
                             <p className="text-gray-500 text-[10px] uppercase tracking-widest mt-1">Mostrar sobre otras apps</p>
                         </div>
-                        {tienePermisoBurbuja ? (
-                            <span className="text-green-500 text-[10px] font-black uppercase bg-green-500/10 px-3 py-1.5 rounded-lg border border-green-500/20">ACTIVO</span>
-                        ) : (
-                            <button onClick={solicitarPermisoBurbuja} className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase px-4 py-2 rounded-xl transition-all shadow-md active:scale-95">Permitir</button>
-                        )}
+                        <button onClick={toggleBurbuja} className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 ease-in-out relative ${burbujaActiva ? 'bg-green-500' : 'bg-gray-700'}`}>
+                            <div className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 ease-in-out ${burbujaActiva ? 'translate-x-6' : 'translate-x-0'}`} />
+                        </button>
                     </div>
 
                     <button onClick={() => setTabActiva('politica')} className="flex justify-between items-center border-t border-white/5 pt-4 group text-left">
@@ -147,15 +194,9 @@ const Perfil = ({ usuario, isPremium, setTabActiva, onLogout }) => {
             {mostrarModalEliminar && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
                     <div className="bg-gray-900 border border-red-500/30 rounded-[2rem] p-6 max-w-sm w-full shadow-2xl">
-                        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mx-auto mb-4">
-                            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        </div>
                         <h3 className="text-xl font-black text-white text-center mb-2">¿Eliminar Cuenta?</h3>
-                        <p className="text-gray-400 text-center text-sm mb-6 leading-relaxed">
-                            Al confirmar, tu cuenta será desactivada y entrará en un <strong className="text-white">período de gracia de 30 días</strong>. Si no vuelves a iniciar sesión, tus datos se borrarán permanentemente.
-                        </p>
-                        <div className="flex flex-col gap-3">
-                            <button onClick={handleEliminarCuenta} disabled={isDeleting} className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 text-white font-bold py-3.5 rounded-2xl transition-all flex justify-center items-center gap-2">
+                        <div className="flex flex-col gap-3 mt-4">
+                            <button onClick={handleEliminarCuenta} disabled={isDeleting} className="w-full bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 text-white font-bold py-3.5 rounded-2xl transition-all">
                                 {isDeleting ? <span className="animate-pulse">Procesando...</span> : "Sí, desactivar cuenta"}
                             </button>
                             <button onClick={() => setMostrarModalEliminar(false)} disabled={isDeleting} className="w-full bg-transparent hover:bg-gray-800 text-gray-300 font-bold py-3.5 rounded-2xl transition-all border border-gray-700">

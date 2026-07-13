@@ -17,13 +17,14 @@ public class SmsReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if ("android.provider.Telephony.SMS_RECEIVED".equals(intent.getAction())) {
 
-            Log.d(TAG, "¡SMS RECIBIDO A NIVEL DE SISTEMA!");
-
+            // Leer las preferencias guardadas desde React (Capacitor)
             SharedPreferences prefs = context.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
-            boolean consentimiento = "true".equals(prefs.getString("consentimiento_sms", "true")); // Por defecto true
+            boolean consentimientoSms = "true".equals(prefs.getString("consentimiento_sms", "true"));
+            boolean burbujaActiva = "true".equals(prefs.getString("burbuja_activa", "false")); // Falso por defecto
 
-            if (!consentimiento) {
-                Log.d(TAG, "Privacidad protegida: SMS ignorado por falta de consentimiento.");
+            // Si el usuario apagó el interruptor de SMS o el de la Burbuja en su Perfil, ignoramos el mensaje
+            if (!consentimientoSms || !burbujaActiva) {
+                Log.d(TAG, "Protección en pausa: El usuario desactivó la burbuja flotante o los SMS.");
                 return;
             }
 
@@ -38,9 +39,9 @@ public class SmsReceiver extends BroadcastReceiver {
                         String remitente = sms.getDisplayOriginatingAddress();
                         String contenido = sms.getMessageBody();
 
-                        Log.d(TAG, "Intercepción detectada. Remitente: " + remitente);
+                        Log.d(TAG, "SMS Interceptado y autorizado para análisis. Remitente: " + remitente);
 
-                        // Iniciar el servicio que hará la petición a Render
+                        // Iniciar el servicio que consultará la IA y mostrará la burbuja
                         Intent serviceIntent = new Intent(context, OverlayService.class);
                         serviceIntent.putExtra("sms_text", contenido);
                         serviceIntent.putExtra("sms_sender", remitente);
